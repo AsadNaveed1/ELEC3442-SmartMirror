@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Mirror UI</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <video id="cameraFeed" autoplay></video>
+
+    <div id="overlay">
+        <div class="widget-area top-left">
+            <div class="widget" id="weather-widget">
+                <h3>Weather</h3>
+                <div class="widget-content">
+                    <div id="weather-data">
+                        <div id="temperature">Loading...</div>
+                        <div id="condition">Fetching data</div>
+                        <div id="humidity">Please wait</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-area top-center">
+        </div>
+
+        <div class="widget-area top-right">
+            <div class="date-time">
+                <div class="time" id="current-time">12:00</div>
+                <div class="date" id="current-date">Apr 14, 2025</div>
+            </div>
+        </div>
+
+        <div class="widget-area middle-left">
+        </div>
+
+        <div class="widget-area middle-center">
+        </div>
+
+        <div class="widget-area middle-right">
+        </div>
+
+        <div class="widget-area bottom-left">
+        </div>
+
+        <div class="widget-area bottom-center">
+        </div>
+
+        <div class="widget-area bottom-right">
+            <div class="widget" id="schedule-widget">
+                <h3>Today's Schedule</h3>
+                <div class="widget-content">
+                    <div id="calendar-events">
+                        <div class="event">10:00 AM - Team Meeting</div>
+                        <div class="event">2:30 PM - Project Review</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="emotion-tag" id="emotion-tag">Emotion: Neutral</div>
+
+    <div class="icon-bar">
+        <div class="icon" id="outfit-icon" title="Outfit Recommendations">👕</div>
+        <div class="icon" id="weather-icon" title="Weather">🌤️</div>
+        <div class="icon" id="calendar-icon" title="Calendar">📅</div>
+        <div class="icon" id="music-icon" title="Music">🎵</div>
+        <div class="icon" id="voice-icon" title="Voice Command">🎤</div>
+    </div>
+
+    <div id="outfitModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Outfit Recommendations</h2>
+            <p id="outfit-weather-info">Based on today's weather:</p>
+            <div id="outfit-loading" class="loading"></div>
+            <img id="outfit-image" src="Users\victor\Downjacket&Pants.jpg" alt="Outfit Image" class="outfit-image" />
+            <div id="outfit-recommendations" class="outfit-grid">
+            </div>
+        </div>
+    </div>
+
+    <div id="weatherModal" class="modal">
+        <div class="modal-content">
+            <div class="weather-modal-header">
+                <h2>Weather Forecast</h2>
+                <span class="close">&times;</span>
+            </div>
+
+            <div id="detailed-weather">
+                <div class="current-weather-container">
+                    <div class="current-location">Hong Kong - Today</div>
+
+                    <div class="current-weather-row">
+                        <div class="current-weather-main">
+                            <div class="current-temp" id="weather-temp">25°C</div>
+                            <div class="current-condition">
+                                <span class="weather-emoji" id="condition-emoji">☁️</span>
+                                <span id="condition-text">Cloudy</span>
+                            </div>
+                        </div>
+
+                        <div class="current-weather-details">
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Humidity</div>
+                                <div class="detail-value" id="weather-humidity">85%</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Rainfall</div>
+                                <div class="detail-value" id="weather-rainfall">0 mm</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">UV Index</div>
+                                <div class="detail-value" id="weather-uv">1</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Updated</div>
+                                <div class="detail-value" id="weather-updated">Just now</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="weather-warnings-container" class="weather-warnings" style="display: none;">
+                    <h3>Weather Warnings</h3>
+                    <div id="weather-warnings">
+                    </div>
+                </div>
+
+                <h3 class="forecast-title">5-Day Forecast</h3>
+                <div id="forecast-container" class="forecast-container">
+                    <div class="forecast-day">
+                        <div class="forecast-date">Loading...</div>
+                        <div class="forecast-icon">...</div>
+                        <div class="forecast-temp">--°C</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendarModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Calendar Events</h2>
+            <div id="calendar-detailed">
+                <h3>Today - April 14, 2025</h3>
+                <div style="margin-top: 15px;">
+                    <div style="border-left: 4px solid #4285F4; padding-left: 10px; margin-bottom: 15px;">
+                        <div style="font-weight: bold;">10:00 AM - 11:30 AM</div>
+                        <div>Team Meeting</div>
+                        <div style="opacity: 0.7;">Conference Room A</div>
+                    </div>
+                    <div style="border-left: 4px solid #EA4335; padding-left: 10px; margin-bottom: 15px;">
+                        <div style="font-weight: bold;">2:30 PM - 4:00 PM</div>
+                        <div>Project Review</div>
+                        <div style="opacity: 0.7;">Online - Zoom</div>
+                    </div>
+                </div>
+
+                <h3>Tomorrow - April 15, 2025</h3>
+                <div style="margin-top: 15px;">
+                    <div style="border-left: 4px solid #FBBC05; padding-left: 10px; margin-bottom: 15px;">
+                        <div style="font-weight: bold;">9:00 AM - 10:00 AM</div>
+                        <div>Weekly Status Update</div>
+                        <div style="opacity: 0.7;">Meeting Room B</div>
+                    </div>
+                    <div style="border-left: 4px solid #34A853; padding-left: 10px; margin-bottom: 15px;">
+                        <div style="font-weight: bold;">3:00 PM - 5:00 PM</div>
+                        <div>Client Presentation</div>
+                        <div style="opacity: 0.7;">Main Conference Hall</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="musicModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Music Recommendations</h2>
+            <p>Based on your mood (<span id="music-mood">Neutral</span>) and preferences:</p>
+            <div style="margin-top: 20px;">
+                <h3>Recommended Playlists</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 30px;">🎵</div>
+                        <div style="font-weight: bold; margin-top: 10px;">Morning Motivation</div>
+                        <div style="opacity: 0.7; font-size: 0.9rem;">15 songs</div>
+                    </div>
+                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 30px;">🎵</div>
+                        <div style="font-weight: bold; margin-top: 10px;">Chill Vibes</div>
+                        <div style="opacity: 0.7; font-size: 0.9rem;">20 songs</div>
+                    </div>
+                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 30px;">🎵</div>
+                        <div style="font-weight: bold; margin-top: 10px;">Focus & Study</div>
+                        <div style="opacity: 0.7; font-size: 0.9rem;">18 songs</div>
+                    </div>
+                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
+                        <div style="font-size: 30px;">🎵</div>
+                        <div style="font-weight: bold; margin-top: 10px;">Classic Rock</div>
+                        <div style="opacity: 0.7; font-size: 0.9rem;">25 songs</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            fetch('/your-endpoint')
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('outfit-image').src = data.image_path;
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        });
+
+        const weatherIcons = {
+            50: '☀️',
+            51: '🌤️',
+            52: '🌤️',
+            53: '🌦️',
+            54: '🌦️',
+            60: '☁️',
+            61: '☁️',
+            62: '🌧️',
+            63: '🌧️',
+            64: '🌧️',
+            65: '⛈️',
+            70: '🌙',
+            71: '🌙',
+            72: '🌙',
+            73: '🌙',
+            74: '🌙',
+            75: '🌙',
+            76: '☁️',
+            77: '🌙',
+            80: '💨',
+            81: '🏜️',
+            82: '💧',
+            83: '🌫️',
+            84: '🌫️',
+            85: '🌫️',
+            90: '🔥',
+            91: '🌡️',
+            92: '❄️',
+            93: '❄️',
+            99: '❓'
+        };
+
+        const weatherConditionNames = {
+            50: 'Sunny',
+            51: 'Sunny Periods',
+            52: 'Sunny Intervals',
+            53: 'Sunny with Showers',
+            54: 'Sunny with Showers',
+            60: 'Cloudy',
+            61: 'Overcast',
+            62: 'Light Rain',
+            63: 'Rain',
+            64: 'Heavy Rain',
+            65: 'Thunderstorms',
+            70: 'Clear Night',
+            71: 'Clear Night',
+            72: 'Clear Night',
+            73: 'Clear Night',
+            74: 'Clear Night',
+            75: 'Clear Night',
+            76: 'Cloudy Night',
+            77: 'Clear Night',
+            80: 'Windy',
+            81: 'Dry',
+            82: 'Humid',
+            83: 'Foggy',
+            84: 'Misty',
+            85: 'Hazy',
+            90: 'Hot',
+            91: 'Warm',
+            92: 'Cool',
+            93: 'Cold',
+            99: 'Unknown'
+        };
+
+        function getWeatherEmoji(iconCode) {
+            if (!iconCode) return '🌤️';
+            iconCode = parseInt(iconCode);
+            return weatherIcons[iconCode] || '🌤️';
+        }
+
+        function getWeatherConditionName(iconCode) {
+            if (!iconCode) return 'Unknown';
+            iconCode = parseInt(iconCode);
+            return weatherConditionNames[iconCode] || 'Unknown';
+        }
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                document.getElementById('cameraFeed').srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                document.getElementById('cameraFeed').style.backgroundColor = "black";
+            }
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
+
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+
+            document.getElementById('weather-updated').textContent = `${hours}:${minutes}`;
+        }
+
+        function setupModals() {
+            const modals = document.getElementsByClassName('modal');
+            const closeButtons = document.getElementsByClassName('close');
+
+            document.getElementById('outfit-icon').onclick = function() {
+                document.getElementById('outfitModal').style.display = 'block';
+                fetchOutfitData();
+            };
+
+            document.getElementById('weather-icon').onclick = function() {
+                document.getElementById('weatherModal').style.display = 'block';
+            };
+            document.getElementById('weather-widget').onclick = function() {
+                document.getElementById('weatherModal').style.display = 'block';
+            };
+
+            document.getElementById('calendar-icon').onclick = function() {
+                document.getElementById('calendarModal').style.display = 'block';
+            };
+            document.getElementById('schedule-widget').onclick = function() {
+                document.getElementById('calendarModal').style.display = 'block';
+            };
+
+            document.getElementById('music-icon').onclick = function() {
+                document.getElementById('musicModal').style.display = 'block';
+                const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
+                document.getElementById('music-mood').textContent = currentEmotion;
+            };
+
+            document.getElementById('voice-icon').onclick = function() {
+                alert("Voice command activated! Say a command...");
+            };
+
+            for (let i = 0; i < closeButtons.length; i++) {
+                closeButtons[i].onclick = function() {
+                    for (let j = 0; j < modals.length; j++) {
+                        modals[j].style.display = 'none';
+                    }
+                };
+            }
+
+            window.onclick = function(event) {
+                for (let i = 0; i < modals.length; i++) {
+                    if (event.target == modals[i]) {
+                        modals[i].style.display = 'none';
+                    }
+                }
+            };
+        }
+
+        async function fetchWeatherAndOutfitData() {
+            try {
+                document.getElementById('temperature').textContent = 'Loading...';
+                document.getElementById('humidity').textContent = 'Fetching data...';
+                document.getElementById('condition').textContent = 'Please wait...';
+
+                const response = await fetch('http://localhost:5001/weather');
+                const data = await response.json();
+
+                console.log('Weather API Response:', data);
+
+                localStorage.setItem('weatherFullData', JSON.stringify(data));
+
+                if (data.weather) {
+                    console.log('Current Weather:', data.weather);
+
+                    const weatherEmoji = getWeatherEmoji(data.weather.icon);
+                    const weatherCondition = getWeatherConditionName(data.weather.icon);
+
+                    document.getElementById('temperature').textContent = `${data.weather.temperature || 'N/A'}°C`;
+                    document.getElementById('humidity').textContent = `Humidity: ${data.weather.humidity || 'N/A'}%`;
+                    document.getElementById('condition').textContent = weatherEmoji;
+
+                    document.getElementById('weather-temp').textContent = `${data.weather.temperature || 'N/A'}°C`;
+                    document.getElementById('condition-emoji').textContent = weatherEmoji;
+                    document.getElementById('condition-text').textContent = weatherCondition;
+                    document.getElementById('weather-humidity').textContent = `${data.weather.humidity || 'N/A'}%`;
+                    document.getElementById('weather-rainfall').textContent = `${data.weather.rainfall || '0'} mm`;
+                    document.getElementById('weather-uv').textContent = data.weather.uv_index || 'N/A';
+
+                    localStorage.setItem('outfitAdvice', data.outfit);
+                }
+
+                if (data.forecast && data.forecast.weatherForecast) {
+                    console.log('Forecast Data:', data.forecast.weatherForecast);
+
+                    updateForecast(data.forecast.weatherForecast);
+                } else {
+                    console.error('Forecast data not available in the API response', data.forecast);
+                    document.getElementById('forecast-container').innerHTML = '<div>No forecast data available</div>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                document.getElementById('temperature').textContent = 'Error loading data';
+                document.getElementById('humidity').textContent = 'Please try again later';
+                document.getElementById('condition').textContent = 'Connection error';
+            }
+        }
+
+        function updateForecast(forecasts) {
+            const forecastContainer = document.getElementById('forecast-container');
+            forecastContainer.innerHTML = '';
+
+            console.log('Updating forecast with', forecasts.length, 'days');
+
+            const fiveDayForecast = forecasts.slice(0, 5);
+
+            fiveDayForecast.forEach(day => {
+                console.log('Processing forecast day:', day);
+
+                let formattedDate = day.week ? day.week.substring(0, 3) : 'N/A';
+                if (day.forecastDate) {
+                    try {
+                        const year = day.forecastDate.substring(0, 4);
+                        const month = parseInt(day.forecastDate.substring(4, 6)) - 1;
+                        const dayNum = day.forecastDate.substring(6, 8);
+                        const date = new Date(year, month, dayNum);
+                        formattedDate = date.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
+                    }
+                }
+
+                const weatherEmoji = getWeatherEmoji(day.ForecastIcon);
+                const weatherCondition = getWeatherConditionName(day.ForecastIcon);
+                const maxTemp = day.forecastMaxtemp && day.forecastMaxtemp.value ? day.forecastMaxtemp.value : 'N/A';
+                const minTemp = day.forecastMintemp && day.forecastMintemp.value ? day.forecastMintemp.value : 'N/A';
+
+                let rainDescription = 'N/A';
+                if (day.PSR) {
+                    const psrValue = parseInt(day.PSR);
+                    if (psrValue < 30) rainDescription = 'Low';
+                    else if (psrValue < 60) rainDescription = 'Medium';
+                    else rainDescription = 'High';
+                }
+
+                const dayElement = document.createElement('div');
+                dayElement.className = 'forecast-day';
+                dayElement.innerHTML = `
+                    <div class="forecast-date">${formattedDate}</div>
+                    <div class="forecast-icon">${weatherEmoji}</div>
+                    <div class="forecast-temp">${maxTemp}°C / ${minTemp}°C</div>
+                    <div class="forecast-rain">Rain: ${rainDescription}</div>
+                `;
+                forecastContainer.appendChild(dayElement);
+            });
+        }
+
+        function updateWarnings(warnings) {
+            const warningsContainer = document.getElementById('weather-warnings-container');
+            const warningsElement = document.getElementById('weather-warnings');
+
+            if (warnings && warnings.length > 0) {
+                warningsContainer.style.display = 'block';
+                warningsElement.innerHTML = '';
+
+                warnings.forEach(warning => {
+                    const warningElement = document.createElement('div');
+                    warningElement.style.marginBottom = '10px';
+                    warningElement.innerHTML = `<strong>${warning.name}</strong>`;
+                    warningsElement.appendChild(warningElement);
+                });
+            } else {
+                warningsContainer.style.display = 'none';
+            }
+        }
+
+        function fetchOutfitData() {
+            document.getElementById('outfit-loading').style.display = 'flex';
+            document.getElementById('outfit-recommendations').innerHTML = '';
+
+            const outfitAdvice = localStorage.getItem('outfitAdvice');
+            const weatherData = JSON.parse(localStorage.getItem('weatherFullData') || '{}');
+
+            if (weatherData.weather) {
+                document.getElementById('outfit-weather-info').textContent =
+                    `Based on today's weather (${weatherData.weather.temperature || 'N/A'}°C, Humidity: ${weatherData.weather.humidity || 'N/A'}%):`;
+            }
+
+            if (outfitAdvice) {
+                document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-image').src = data.image_path;
+                const lines = outfitAdvice.split('\n').filter(line => line.trim() !== '');
+
+                if (lines.length > 0) {
+                    const outfitHTML = lines.map(item => {
+                        let emoji = '👕';
+                        let text = item.trim();
+
+                        const emojiMatch = item.match(/^(\p{Emoji}+)/u);
+                        if (emojiMatch) {
+                            emoji = emojiMatch[0];
+                            text = item.replace(emojiMatch[0], '').trim();
+                        }
+
+                        return `
+                        <div class="outfit-item">
+                            <p>${text}</p>
+                        </div>`;
+                    }).join('');
+
+                    document.getElementById('outfit-recommendations').innerHTML = outfitHTML;
+                } else {
+                    document.getElementById('outfit-recommendations').innerHTML = `
+                        <div class="outfit-item">
+                            <p>${outfitAdvice}</p>
+                        </div>`;
+
+                }
+            } else {
+                fetchWeatherAndOutfitData().then(() => {
+                    fetchOutfitData();
+                });
+            }
+        }
+
+        function simulateEmotionDetection() {
+            const emotions = ['Happy', 'Neutral', 'Thoughtful', 'Focused', 'Tired'];
+            const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
+            document.getElementById('emotion-tag').textContent = `Emotion: ${randomEmotion}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            startCamera();
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            setupModals();
+
+            fetchWeatherAndOutfitData();
+            setInterval(fetchWeatherAndOutfitData, 30 * 60 * 1000);
+
+            simulateEmotionDetection();
+            setInterval(simulateEmotionDetection, 5000);
+        });
+    </script>
+</body>
+</html>
