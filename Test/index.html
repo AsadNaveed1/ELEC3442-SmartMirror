@@ -77,7 +77,7 @@
             <h2>Outfit Recommendations</h2>
             <p id="outfit-weather-info">Based on today's weather:</p>
             <div id="outfit-loading" class="loading"></div>
-            <img id="outfit-image" src="Users\victor\Downjacket&Pants.jpg" alt="Outfit Image" class="outfit-image" />
+            <img id="outfit-image" src="" alt="Outfit Image" class="outfit-image" />
             <div id="outfit-recommendations" class="outfit-grid">
             </div>
         </div>
@@ -215,15 +215,6 @@
     </div>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            fetch('/your-endpoint')
-                .then(response => response.json())
-                .then(data => {
-                    document.getElementById('outfit-image').src = data.image_path;
-                })
-                .catch(error => console.error('Error fetching data:', error));
-        });
-
         const weatherIcons = {
             50: '☀️',
             51: '🌤️',
@@ -497,49 +488,29 @@
             document.getElementById('outfit-loading').style.display = 'flex';
             document.getElementById('outfit-recommendations').innerHTML = '';
 
-            const outfitAdvice = localStorage.getItem('outfitAdvice');
-            const weatherData = JSON.parse(localStorage.getItem('weatherFullData') || '{}');
-
-            if (weatherData.weather) {
-                document.getElementById('outfit-weather-info').textContent =
-                    `Based on today's weather (${weatherData.weather.temperature || 'N/A'}°C, Humidity: ${weatherData.weather.humidity || 'N/A'}%):`;
-            }
-
-            if (outfitAdvice) {
-                document.getElementById('outfit-loading').style.display = 'none';
+            fetch('http://localhost:5001/outfit')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Outfit API Response:', data);
+                    
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    
                     document.getElementById('outfit-image').src = data.image_path;
-                const lines = outfitAdvice.split('\n').filter(line => line.trim() !== '');
-
-                if (lines.length > 0) {
-                    const outfitHTML = lines.map(item => {
-                        let emoji = '👕';
-                        let text = item.trim();
-
-                        const emojiMatch = item.match(/^(\p{Emoji}+)/u);
-                        if (emojiMatch) {
-                            emoji = emojiMatch[0];
-                            text = item.replace(emojiMatch[0], '').trim();
-                        }
-
-                        return `
-                        <div class="outfit-item">
-                            <p>${text}</p>
-                        </div>`;
-                    }).join('');
-
-                    document.getElementById('outfit-recommendations').innerHTML = outfitHTML;
-                } else {
+                    
+                    document.getElementById('outfit-weather-info').textContent = 
+                        `Based on test weather (${data.test_weather.temperature}°C, Humidity: ${data.test_weather.humidity}%):`;
+                    
                     document.getElementById('outfit-recommendations').innerHTML = `
                         <div class="outfit-item">
-                            <p>${outfitAdvice}</p>
+                            <p>${data.advice}</p>
                         </div>`;
-
-                }
-            } else {
-                fetchWeatherAndOutfitData().then(() => {
-                    fetchOutfitData();
+                })
+                .catch(error => {
+                    console.error('Error fetching outfit data:', error);
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-recommendations').innerHTML = 
+                        '<div class="outfit-item"><p>Error loading outfit recommendations</p></div>';
                 });
-            }
         }
 
         function simulateEmotionDetection() {

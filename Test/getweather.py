@@ -136,8 +136,8 @@ def get_weather_forecast() -> dict:
         return {}
 
 
-def get_outfit_advice(weather_description: List[str],user: str,specialneed: str) -> str:
-    filepath = f"Users\{user}"
+def get_outfit_advice(weather_description: List[str], user: str, specialneed: str) -> str:
+    filepath = f"Users/{user}"
     file_names = os.listdir(filepath)
     available_outfits = [f for f in file_names if os.path.isfile(os.path.join(filepath, f))]
 
@@ -187,30 +187,60 @@ def get_outfit_advice(weather_description: List[str],user: str,specialneed: str)
     outfit_path = os.path.join(filepath, recommended_outfit[0])
     filepath = outfit_path
 
-    return ai_recommendation,filepath
+    return ai_recommendation, filepath
 
 
 @app.route('/weather')
 def get_weather():
     current_weather = get_current_weather()
-
     forecast = get_weather_forecast()
 
-    #weather_description = [current_weather["temperature"], current_weather["humidity"], current_weather["rainfall"],current_weather["uv_index"]]
-    weather_description = ["1", "90", "20", "78"]
+
+    weather_description = [current_weather["temperature"], current_weather["humidity"], current_weather["rainfall"], current_weather["uv_index"]]
     user = "victor"
 
-    outfit_advice, filepath = get_outfit_advice(weather_description, user,specialneed="None")  # access deepseek v3 and get recommendation
+    outfit_advice, filepath = get_outfit_advice(weather_description, user, specialneed="None")
     outfit_advice = outfit_advice.split(":")
     outfit_advice = outfit_advice[1]
-    print(outfit_advice)
-    print(filepath)
+    print("Weather values used:", weather_description)
+    print("Outfit advice:", outfit_advice)
+    print("Image path:", filepath)
 
     return jsonify({
         "weather": current_weather,
         "forecast": forecast,
         "outfit": outfit_advice,
-        "image_path" : filepath
+        "image_path": filepath
+    })
+
+
+# New dedicated endpoint for outfit recommendations
+@app.route('/outfit')
+def get_outfit():
+    # For testing different weather conditions - change these values as needed
+    # Format: [temperature, humidity, rainfall, uv_index]
+    test_weather = ["10", "90", "20", "78"]
+    
+    user = "victor"
+    outfit_advice, filepath = get_outfit_advice(test_weather, user, specialneed="None")
+    
+
+    if ":" in outfit_advice:
+        outfit_advice = outfit_advice.split(":")[1]
+    
+    print("Test weather values used:", test_weather)
+    print("Outfit advice:", outfit_advice)
+    print("Image path:", filepath)
+
+    return jsonify({
+        "advice": outfit_advice,
+        "image_path": filepath,
+        "test_weather": {
+            "temperature": test_weather[0],
+            "humidity": test_weather[1],
+            "rainfall": test_weather[2],
+            "uv_index": test_weather[3]
+        }
     })
 
 
