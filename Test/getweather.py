@@ -6,6 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from typing import List
+import google_calendar 
 
 load_dotenv()
 
@@ -219,7 +220,7 @@ def get_weather():
 def get_outfit():
     # For testing different weather conditions - change these values as needed
     # Format: [temperature, humidity, rainfall, uv_index]
-    test_weather = ["10", "90", "20", "78"]
+    test_weather = ["10", "90", "0", "78"]
     
     user = "victor"
     outfit_advice, filepath = get_outfit_advice(test_weather, user, specialneed="None")
@@ -243,6 +244,7 @@ def get_outfit():
         }
     })
 
+google_calendar.register_calendar_routes(app)
 
 if __name__ == "__main__":
     app.run(debug=True, port=5001, host='0.0.0.0')

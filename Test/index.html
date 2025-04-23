@@ -53,8 +53,7 @@
                 <h3>Today's Schedule</h3>
                 <div class="widget-content">
                     <div id="calendar-events">
-                        <div class="event">10:00 AM - Team Meeting</div>
-                        <div class="event">2:30 PM - Project Review</div>
+                        <div class="loading"></div>
                     </div>
                 </div>
             </div>
@@ -150,33 +149,7 @@
             <span class="close">&times;</span>
             <h2>Calendar Events</h2>
             <div id="calendar-detailed">
-                <h3>Today - April 14, 2025</h3>
-                <div style="margin-top: 15px;">
-                    <div style="border-left: 4px solid #4285F4; padding-left: 10px; margin-bottom: 15px;">
-                        <div style="font-weight: bold;">10:00 AM - 11:30 AM</div>
-                        <div>Team Meeting</div>
-                        <div style="opacity: 0.7;">Conference Room A</div>
-                    </div>
-                    <div style="border-left: 4px solid #EA4335; padding-left: 10px; margin-bottom: 15px;">
-                        <div style="font-weight: bold;">2:30 PM - 4:00 PM</div>
-                        <div>Project Review</div>
-                        <div style="opacity: 0.7;">Online - Zoom</div>
-                    </div>
-                </div>
-
-                <h3>Tomorrow - April 15, 2025</h3>
-                <div style="margin-top: 15px;">
-                    <div style="border-left: 4px solid #FBBC05; padding-left: 10px; margin-bottom: 15px;">
-                        <div style="font-weight: bold;">9:00 AM - 10:00 AM</div>
-                        <div>Weekly Status Update</div>
-                        <div style="opacity: 0.7;">Meeting Room B</div>
-                    </div>
-                    <div style="border-left: 4px solid #34A853; padding-left: 10px; margin-bottom: 15px;">
-                        <div style="font-weight: bold;">3:00 PM - 5:00 PM</div>
-                        <div>Client Presentation</div>
-                        <div style="opacity: 0.7;">Main Conference Hall</div>
-                    </div>
-                </div>
+                <div class="loading"></div>
             </div>
         </div>
     </div>
@@ -334,9 +307,11 @@
 
             document.getElementById('calendar-icon').onclick = function() {
                 document.getElementById('calendarModal').style.display = 'block';
+                updateCalendarModal();
             };
             document.getElementById('schedule-widget').onclick = function() {
                 document.getElementById('calendarModal').style.display = 'block';
+                updateCalendarModal();
             };
 
             document.getElementById('music-icon').onclick = function() {
@@ -532,5 +507,7 @@
             setInterval(simulateEmotionDetection, 5000);
         });
     </script>
+    
+    <script src="calendar.js"></script>
 </body>
 </html>

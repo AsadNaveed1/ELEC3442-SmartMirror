@@ -427,3 +427,39 @@ body {
         scroll-snap-align: start;
     }
 }
+
+
+
+.event {
+    margin-bottom: 10px;
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.event-time {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.event-title {
+    font-weight: 500;
+}
+
+.more-events {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.no-events {
+    text-align: center;
+    opacity: 0.7;
+    padding: 10px 0;
+}
+
+.modal .close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+}
