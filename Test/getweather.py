@@ -6,7 +6,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 from typing import List
-import google_calendar 
+import google_calendar
 
 load_dotenv()
 
@@ -190,14 +190,68 @@ def get_outfit_advice(weather_description: List[str], user: str, specialneed: st
 
     return ai_recommendation, filepath
 
+def get_song_advice(mood: str) -> str:
+    with open("songlist.js", "r", encoding="utf-8") as f:
+        song_data = json.load(f)
+    # Prepare the prompt for the AI model
+    prompt = (
+        f"你是一个专业的音乐推荐助手，需要根据用户心情从以下歌曲中选择最合适的一首:\n"
+        f"当前用户心情: {mood}\n\n"
+        f"可选的歌曲列表:\n"
+    )
+    for song in song_data["songs"]:
+        prompt += f"- {song['name']} by {song['artist']} genre: {song['genre']}\n"
+
+    prompt += (
+        f"\n请根据用户心情('{mood}')推荐最适合的一首歌。"
+        f"请只回复你推荐的歌曲名称,作者，必须根据我给你的输出的名字，格式为歌曲名字:作者"
+    )
+    # Call the AI model (similar to your outfit recommendation example)
+    url = "https://api.deepseek.com/chat/completions"
+    payload = json.dumps({
+        "messages": [
+            {
+                "content": "你是一个专业的音乐推荐助手，需要根据用户心情从给定的歌曲中选择最合适的一首。",
+                "role": "system"
+            },
+            {
+                "content": prompt,
+                "role": "user"
+            }
+        ],
+        "model": "deepseek-chat",
+        "temperature": 0.3,
+        "max_tokens": 50
+    })
+    headers = {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer sk-8eb9823ca5184eb7b675d4b41131cb49'
+    }
+    response = requests.post(url, headers=headers, data=payload)
+    response_data = response.json()
+    ai_recommendation = response_data["choices"][0]["message"]["content"].strip()
+    recommended_song, recommended_artist = ai_recommendation.split(":")
+    recommended_song = recommended_song.strip()
+    recommended_artist = recommended_artist.strip()
+
+    # Find the matching song's embed URL
+    for song in song_data["songs"]:
+        if song["name"] == recommended_song and song["artist"] == recommended_artist:
+            print(song["name"])
+            return song["soundcloud_embed"]
+
+    return
+
+
 
 @app.route('/weather')
 def get_weather():
     current_weather = get_current_weather()
     forecast = get_weather_forecast()
 
-
-    weather_description = [current_weather["temperature"], current_weather["humidity"], current_weather["rainfall"], current_weather["uv_index"]]
+    weather_description = [current_weather["temperature"], current_weather["humidity"], current_weather["rainfall"],
+                           current_weather["uv_index"]]
     user = "victor"
 
     outfit_advice, filepath = get_outfit_advice(weather_description, user, specialneed="None")
@@ -220,15 +274,16 @@ def get_weather():
 def get_outfit():
     # For testing different weather conditions - change these values as needed
     # Format: [temperature, humidity, rainfall, uv_index]
-    test_weather = ["10", "90", "0", "78"]
-    
+    current_weather = get_current_weather()
+    #test_weather = ["10", "90", "0", "78"]
+    test_weather = [current_weather['temperature'],current_weather['humidity'],current_weather['rainfall'],current_weather['uv_index']]
+
     user = "victor"
     outfit_advice, filepath = get_outfit_advice(test_weather, user, specialneed="None")
-    
 
     if ":" in outfit_advice:
         outfit_advice = outfit_advice.split(":")[1]
-    
+
     print("Test weather values used:", test_weather)
     print("Outfit advice:", outfit_advice)
     print("Image path:", filepath)
@@ -244,7 +299,9 @@ def get_outfit():
         }
     })
 
+
 google_calendar.register_calendar_routes(app)
 
 if __name__ == "__main__":
+    songurl = get_song_advice("Sad")
     app.run(debug=True, port=5001, host='0.0.0.0')
