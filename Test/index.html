@@ -162,26 +162,10 @@
             <div style="margin-top: 20px;">
                 <h3>Recommended Playlists</h3>
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
-                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
-                        <div style="font-size: 30px;">🎵</div>
-                        <div style="font-weight: bold; margin-top: 10px;">Morning Motivation</div>
-                        <div style="opacity: 0.7; font-size: 0.9rem;">15 songs</div>
-                    </div>
-                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
-                        <div style="font-size: 30px;">🎵</div>
-                        <div style="font-weight: bold; margin-top: 10px;">Chill Vibes</div>
-                        <div style="opacity: 0.7; font-size: 0.9rem;">20 songs</div>
-                    </div>
-                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
-                        <div style="font-size: 30px;">🎵</div>
-                        <div style="font-weight: bold; margin-top: 10px;">Focus & Study</div>
-                        <div style="opacity: 0.7; font-size: 0.9rem;">18 songs</div>
-                    </div>
-                    <div style="background-color: rgba(60, 60, 60, 0.8); border-radius: 10px; padding: 15px; text-align: center;">
-                        <div style="font-size: 30px;">🎵</div>
-                        <div style="font-weight: bold; margin-top: 10px;">Classic Rock</div>
-                        <div style="opacity: 0.7; font-size: 0.9rem;">25 songs</div>
-                    </div>
+                <iframe width="314%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/249811396&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+                <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
+                </div>
                 </div>
             </div>
         </div>
@@ -467,14 +451,14 @@
                 .then(response => response.json())
                 .then(data => {
                     console.log('Outfit API Response:', data);
-                    
+
                     document.getElementById('outfit-loading').style.display = 'none';
-                    
+
                     document.getElementById('outfit-image').src = data.image_path;
-                    
-                    document.getElementById('outfit-weather-info').textContent = 
+
+                    document.getElementById('outfit-weather-info').textContent =
                         `Based on test weather (${data.test_weather.temperature}°C, Humidity: ${data.test_weather.humidity}%):`;
-                    
+
                     document.getElementById('outfit-recommendations').innerHTML = `
                         <div class="outfit-item">
                             <p>${data.advice}</p>
@@ -483,7 +467,7 @@
                 .catch(error => {
                     console.error('Error fetching outfit data:', error);
                     document.getElementById('outfit-loading').style.display = 'none';
-                    document.getElementById('outfit-recommendations').innerHTML = 
+                    document.getElementById('outfit-recommendations').innerHTML =
                         '<div class="outfit-item"><p>Error loading outfit recommendations</p></div>';
                 });
         }
@@ -507,7 +491,7 @@
             setInterval(simulateEmotionDetection, 5000);
         });
     </script>
-    
+
     <script src="calendar.js"></script>
 </body>
 </html>
