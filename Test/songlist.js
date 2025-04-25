@@ -35,6 +35,30 @@
       "artist": "Tawbe",
       "genre": "Lo-Fi, Chillhop, Jazz",
       "soundcloud_embed": "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1935414902&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+    },
+    {
+      "name": "Life Choice",
+      "artist": "Spaceouters",
+      "genre": "sad, Ambient, Electronic",
+      "soundcloud_embed": "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/425924358&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+    },
+    {
+      "name": "MURDER IN MY MIND",
+      "artist": "KORDHELL",
+      "genre": "hyper, Phonk, Electronic",
+      "soundcloud_embed": "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1200564529&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+    },
+    {
+      "name": "MURDER IN MY MIND",
+      "artist": "KORDHELL",
+      "genre": "Phonk, Electronic, relaxing",
+      "soundcloud_embed": "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1200564529&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
+    },
+    {
+      "name": "By Your Side",
+      "artist": "Willow",
+      "genre": "relaxing, Indie, Folk",
+      "soundcloud_embed": "https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/1955074015&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"
     }
   ]
 }
