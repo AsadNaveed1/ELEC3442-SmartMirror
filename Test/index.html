@@ -60,7 +60,7 @@
         </div>
     </div>
 
-    <div class="emotion-tag" id="emotion-tag">Emotion: Neutral</div>
+    <div class="emotion-tag" id="emotion-tag">Emotion: Loading...</div>
 
     <div class="icon-bar">
         <div class="icon" id="outfit-icon" title="Outfit Recommendations">👕</div>
@@ -158,14 +158,10 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Music Recommendations</h2>
-            <p>Based on your mood (<span id="music-mood">Neutral</span>) and preferences:</p>
+            <p>Based on your mood (<span id="music-mood">Loading...</span>) and preferences:</p>
             <div style="margin-top: 20px;">
-                <h3>Recommended Playlists</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
-                <iframe width="314%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/249811396&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
-                <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
-                </div>
+                <div id="music-container" style="width: 100%;">
+                    <div class="loading"></div>
                 </div>
             </div>
         </div>
@@ -273,6 +269,62 @@
             document.getElementById('weather-updated').textContent = `${hours}:${minutes}`;
         }
 
+        function updateMoodDisplay() {
+            fetch('http://localhost:5001/get_mood')
+                .then(response => response.json())
+                .then(data => {
+                    const mood = data.mood;
+                    document.getElementById('emotion-tag').textContent = `Emotion: ${mood}`;
+                    if (document.getElementById('musicModal').style.display === 'block') {
+                        document.getElementById('music-mood').textContent = mood;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching mood:', error);
+                    document.getElementById('emotion-tag').textContent = 'Emotion: Unknown';
+                });
+        }
+
+        let musicPollingInterval = null;
+
+        function fetchMusicRecommendation() {
+            const musicContainer = document.getElementById('music-container');
+            if (musicContainer) {
+                musicContainer.innerHTML = '<div class="loading"></div>';
+            }
+            
+            fetch('http://localhost:5001/music')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Music API Response:', data);
+                    
+                    if (data.embed_url) {
+                        if (musicContainer) {
+                            document.getElementById('music-mood').textContent = data.mood;
+
+                            musicContainer.innerHTML = `
+                                <div style="margin-bottom: 15px;">
+                                    <p><strong>Genre:</strong> ${data.genre}</p>
+                                    <h3>${data.name} by ${data.artist}</h3>
+                                </div>
+                                <div style="width: 100%;">
+                                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                    src="${data.embed_url}"></iframe>
+                                    <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching music data:', error);
+                    if (musicContainer) {
+                        musicContainer.innerHTML = '<div>Error loading music recommendations</div>';
+                    }
+                });
+        }
+
         function setupModals() {
             const modals = document.getElementsByClassName('modal');
             const closeButtons = document.getElementsByClassName('close');
@@ -300,8 +352,14 @@
 
             document.getElementById('music-icon').onclick = function() {
                 document.getElementById('musicModal').style.display = 'block';
-                const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
-                document.getElementById('music-mood').textContent = currentEmotion;
+                updateMoodDisplay();
+                fetchMusicRecommendation();
+                
+                if (musicPollingInterval) {
+                    clearInterval(musicPollingInterval);
+                }
+                
+                musicPollingInterval = setInterval(fetchMusicRecommendation, 30000); 
             };
 
             document.getElementById('voice-icon').onclick = function() {
@@ -313,6 +371,10 @@
                     for (let j = 0; j < modals.length; j++) {
                         modals[j].style.display = 'none';
                     }
+                    if (musicPollingInterval) {
+                        clearInterval(musicPollingInterval);
+                        musicPollingInterval = null;
+                    }
                 };
             }
 
@@ -320,6 +382,11 @@
                 for (let i = 0; i < modals.length; i++) {
                     if (event.target == modals[i]) {
                         modals[i].style.display = 'none';
+                        
+                        if (musicPollingInterval) {
+                            clearInterval(musicPollingInterval);
+                            musicPollingInterval = null;
+                        }
                     }
                 }
             };
@@ -472,12 +539,6 @@
                 });
         }
 
-        function simulateEmotionDetection() {
-            const emotions = ['Happy', 'Neutral', 'Thoughtful', 'Focused', 'Tired'];
-            const randomEmotion = emotions[Math.floor(Math.random() * emotions.length)];
-            document.getElementById('emotion-tag').textContent = `Emotion: ${randomEmotion}`;
-        }
-
         document.addEventListener('DOMContentLoaded', function() {
             startCamera();
             updateDateTime();
@@ -487,8 +548,10 @@
             fetchWeatherAndOutfitData();
             setInterval(fetchWeatherAndOutfitData, 30 * 60 * 1000);
 
-            simulateEmotionDetection();
-            setInterval(simulateEmotionDetection, 5000);
+            updateMoodDisplay();
+            setInterval(updateMoodDisplay, 10000);
+        
+            fetchMusicRecommendation();
         });
     </script>
 

@@ -1,6 +1,6 @@
 import requests
 import json
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from datetime import datetime
 import os
@@ -190,59 +190,115 @@ def get_outfit_advice(weather_description: List[str], user: str, specialneed: st
 
     return ai_recommendation, filepath
 
-def get_song_advice(mood: str) -> str:
-    with open("songlist.js", "r", encoding="utf-8") as f:
-        song_data = json.load(f)
-    # Prepare the prompt for the AI model
-    prompt = (
-        f"你是一个专业的音乐推荐助手，需要根据用户心情从以下歌曲中选择最合适的一首:\n"
-        f"当前用户心情: {mood}\n\n"
-        f"可选的歌曲列表:\n"
-    )
-    for song in song_data["songs"]:
-        prompt += f"- {song['name']} by {song['artist']} genre: {song['genre']}\n"
+def get_song_advice(mood=None):
+    # MODIFY THIS LINE TO CHANGE THE MOOD MANUALLY - this is the only place to change
+    test_mood = "love"  # Change this value to whatever mood you want
+    mood = test_mood
+    
+    try:
+        with open("songlist.js", "r", encoding="utf-8") as f:
+            content = f.read()
+            content = content.strip()
+            if content.startswith('{') and content.endswith('}'):
+                song_data = json.loads(content)
+            else:
+                print("Invalid JSON format in songlist.js")
+                return None
+                
+        prompt = (
+            f"你是一个专业的音乐推荐助手，需要根据用户心情从以下歌曲中选择最合适的一首:\n"
+            f"当前用户心情: {mood}\n\n"
+            f"可选的歌曲列表:\n"
+        )
+        for song in song_data["songs"]:
+            prompt += f"- {song['name']} by {song['artist']} genre: {song['genre']}\n"
 
-    prompt += (
-        f"\n请根据用户心情('{mood}')推荐最适合的一首歌。"
-        f"请只回复你推荐的歌曲名称,作者，必须根据我给你的输出的名字，格式为歌曲名字:作者"
-    )
-    # Call the AI model (similar to your outfit recommendation example)
-    url = "https://api.deepseek.com/chat/completions"
-    payload = json.dumps({
-        "messages": [
-            {
-                "content": "你是一个专业的音乐推荐助手，需要根据用户心情从给定的歌曲中选择最合适的一首。",
-                "role": "system"
-            },
-            {
-                "content": prompt,
-                "role": "user"
-            }
-        ],
-        "model": "deepseek-chat",
-        "temperature": 0.3,
-        "max_tokens": 50
-    })
-    headers = {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Authorization': 'Bearer sk-8eb9823ca5184eb7b675d4b41131cb49'
-    }
-    response = requests.post(url, headers=headers, data=payload)
-    response_data = response.json()
-    ai_recommendation = response_data["choices"][0]["message"]["content"].strip()
-    recommended_song, recommended_artist = ai_recommendation.split(":")
-    recommended_song = recommended_song.strip()
-    recommended_artist = recommended_artist.strip()
-
-    # Find the matching song's embed URL
-    for song in song_data["songs"]:
-        if song["name"] == recommended_song and song["artist"] == recommended_artist:
-            print(song["name"])
-            return song["soundcloud_embed"]
-
-    return
-
+        prompt += (
+            f"\n请根据用户心情('{mood}')推荐最适合的一首歌。"
+            f"请只回复你推荐的歌曲名称,作者，必须根据我给你的输出的名字，格式为歌曲名字:作者"
+        )
+        
+        # Call the AI model
+        url = "https://api.deepseek.com/chat/completions"
+        payload = json.dumps({
+            "messages": [
+                {
+                    "content": "你是一个专业的音乐推荐助手，需要根据用户心情从给定的歌曲中选择最合适的一首。",
+                    "role": "system"
+                },
+                {
+                    "content": prompt,
+                    "role": "user"
+                }
+            ],
+            "model": "deepseek-chat",
+            "temperature": 0.3,
+            "max_tokens": 50
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer sk-8eb9823ca5184eb7b675d4b41131cb49'
+        }
+        response = requests.post(url, headers=headers, data=payload)
+        response_data = response.json()
+        ai_recommendation = response_data["choices"][0]["message"]["content"].strip()
+        
+        try:
+            recommended_song, recommended_artist = ai_recommendation.split(":")
+            recommended_song = recommended_song.strip()
+            recommended_artist = recommended_artist.strip()
+            
+            for song in song_data["songs"]:
+                if song["name"].lower() == recommended_song.lower() and song["artist"].lower() == recommended_artist.lower():
+                    print(f"Recommended song: {song['name']} by {song['artist']} for mood: {mood}")
+                    return {
+                        "embed_url": song["soundcloud_embed"],
+                        "name": song["name"],
+                        "artist": song["artist"],
+                        "genre": song["genre"],
+                        "mood": mood
+                    }
+            
+            for song in song_data["songs"]:
+                if recommended_song.lower() in song["name"].lower() or song["name"].lower() in recommended_song.lower():
+                    print(f"Partial match found: {song['name']} by {song['artist']} for mood: {mood}")
+                    return {
+                        "embed_url": song["soundcloud_embed"],
+                        "name": song["name"],
+                        "artist": song["artist"],
+                        "genre": song["genre"],
+                        "mood": mood
+                    }
+                    
+            if song_data["songs"]:
+                print(f"Using fallback song: {song_data['songs'][0]['name']} for mood: {mood}")
+                song = song_data["songs"][0]
+                return {
+                    "embed_url": song["soundcloud_embed"],
+                    "name": song["name"],
+                    "artist": song["artist"],
+                    "genre": song["genre"],
+                    "mood": mood
+                }
+                
+        except Exception as e:
+            print(f"Error parsing recommendation: {e}")
+            print(f"AI response was: {ai_recommendation}")
+            
+            # Fallback to first song
+            if song_data["songs"]:
+                song = song_data["songs"][0]
+                return {
+                    "embed_url": song["soundcloud_embed"],
+                    "name": song["name"],
+                    "artist": song["artist"],
+                    "genre": song["genre"],
+                    "mood": mood
+                }
+    except Exception as e:
+        print(f"Error in get_song_advice: {e}")
+        return None
 
 
 @app.route('/weather')
@@ -299,9 +355,26 @@ def get_outfit():
         }
     })
 
+# A new endpoint to get song recommendations
+@app.route('/music')
+def get_music():
+    recommendation = get_song_advice()
+    if recommendation:
+        return jsonify(recommendation)
+    else:
+        return jsonify({"error": "Could not generate song recommendation"}), 500
+
+# Add an endpoint to get the current mood
+@app.route('/get_mood')
+def get_mood():
+    # Get the manually set mood from the function
+    mood_data = get_song_advice()
+    if mood_data and 'mood' in mood_data:
+        return jsonify({"mood": mood_data['mood']})
+    return jsonify({"mood": "Unknown"})
+
 
 google_calendar.register_calendar_routes(app)
 
 if __name__ == "__main__":
-    songurl = get_song_advice("Sad")
     app.run(debug=True, port=5001, host='0.0.0.0')
