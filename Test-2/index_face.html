@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Mirror UI</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Add Weather Icons Font -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.10/css/weather-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        /* Ensure the weather icons display at a good size */
+        .weather-icon {
+            font-size: 1.5em;
+        }
+        .forecast-icon .weather-icon {
+            font-size: 2em;
+        }
+        /* Style for the icon bar buttons */
+        .icon-bar .icon {
+            font-size: 1.8em;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .icon-bar .icon i {
+            margin: 0;  /* Remove any margin */
+        }
+        /* Style for the user display */
+        .user-info {
+            margin-top: 10px;
+            font-size: 1.2em;
+            color: #ffffff;
+        }
+        /* Style for the detected emotion */
+        .emotion-tag {
+			position: fixed;
+			top: 20px;
+			left: 50%;
+			transform: translateX(-50%);
+			background-color: rgba(0, 0, 0, 0.6);
+			color: white;
+			padding: 10px 15px;
+			border-radius: 15px;
+			font-size: 1.2em;
+			z-index: 100;
+		}
+    </style>
+</head>
+<body>
+    <video id="cameraFeed" autoplay></video>
+
+    <div id="overlay">
+        <div class="widget-area top-left">
+            <div class="widget" id="weather-widget">
+                <h3>Weather</h3>
+                <div class="widget-content">
+                    <div id="weather-data">
+                        <div id="temperature">Loading...</div>
+                        <div id="condition"><i class="wi wi-day-sunny weather-icon"></i> Fetching data</div>
+                        <div id="humidity">Please wait</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="widget-area top-center">
+        </div>
+
+        <div class="widget-area top-right">
+            <div class="date-time">
+                <div class="time" id="current-time">12:00</div>
+                <div class="date" id="current-date">Apr 14, 2025</div>
+                <div class="user-info" id="current-user">Current user: Unknown</div>
+            </div>
+        </div>
+
+        <div class="widget-area middle-left">
+        </div>
+
+        <div class="widget-area middle-center">
+        </div>
+
+        <div class="widget-area middle-right">
+        </div>
+
+        <div class="widget-area bottom-left">
+        </div>
+
+        <div class="widget-area bottom-center">
+        </div>
+
+        <div class="widget-area bottom-right">
+            <div class="widget" id="schedule-widget">
+                <h3>Today's Schedule</h3>
+                <div class="widget-content">
+                    <div id="calendar-events">
+                        <div class="loading"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="emotion-tag" id="emotion-tag">Emotion: Neutral</div>
+
+    <div class="icon-bar">
+        <div class="icon" id="face-icon" title="Face Recognition"><i class="wi wi-alien"></i></div>
+        <div class="icon" id="outfit-icon" title="Outfit Recommendations"><i class="wi wi-sunrise"></i></div>
+        <div class="icon" id="weather-icon" title="Weather"><i class="wi wi-day-sunny"></i></div>
+        <div class="icon" id="calendar-icon" title="Calendar"><i class="wi wi-time-1"></i></div>
+        <div class="icon" id="music-icon" title="Music"><i class="wi wi-tsunami"></i></div>
+    </div>
+
+    <div id="outfitModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Outfit Recommendations</h2>
+            <p id="outfit-weather-info">Based on today's weather:</p>
+            <div id="outfit-event-info" style="margin-bottom: 15px; border-left: 4px solid #4fc3f7; padding-left: 10px; display: none;">
+                <p>Important events today: <span id="outfit-events">None</span></p>
+            </div>
+            <div id="outfit-loading" class="loading"></div>
+            <img id="outfit-image" src="" alt="Outfit Image" class="outfit-image" />
+            <div id="outfit-recommendations" class="outfit-grid">
+            </div>
+        </div>
+    </div>
+
+    <div id="weatherModal" class="modal">
+        <div class="modal-content">
+            <div class="weather-modal-header">
+                <h2>Weather Forecast</h2>
+                <span class="close">&times;</span>
+            </div>
+
+            <div id="detailed-weather">
+                <div class="current-weather-container">
+                    <div class="current-location">Hong Kong - Today</div>
+
+                    <div class="current-weather-row">
+                        <div class="current-weather-main">
+                            <div class="current-temp" id="weather-temp">25°C</div>
+                            <div class="current-condition">
+                                <span id="condition-icon"><i class="wi wi-cloudy weather-icon"></i></span>
+                                <span id="condition-text">Cloudy</span>
+                            </div>
+                        </div>
+
+                        <div class="current-weather-details">
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Humidity</div>
+                                <div class="detail-value" id="weather-humidity">85%</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Rainfall</div>
+                                <div class="detail-value" id="weather-rainfall">0 mm</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">UV Index</div>
+                                <div class="detail-value" id="weather-uv">1</div>
+                            </div>
+
+                            <div class="weather-detail-item">
+                                <div class="detail-label">Updated</div>
+                                <div class="detail-value" id="weather-updated">Just now</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="weather-warnings-container" class="weather-warnings" style="display: none;">
+                    <h3>Weather Warnings</h3>
+                    <div id="weather-warnings">
+                    </div>
+                </div>
+
+                <h3 class="forecast-title">5-Day Forecast</h3>
+                <div id="forecast-container" class="forecast-container">
+                    <div class="forecast-day">
+                        <div class="forecast-date">Loading...</div>
+                        <div class="forecast-icon"><i class="wi wi-day-sunny weather-icon"></i></div>
+                        <div class="forecast-temp">--°C</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="calendarModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Calendar Events</h2>
+            <div id="calendar-detailed">
+                <div class="loading"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="musicModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Music Recommendations</h2>
+            <p>Based on your mood (<span id="music-mood">Neutral</span>) and preferences:</p>
+            <div style="margin-top: 20px;">
+                <h3>Recommended Playlists</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
+                <iframe width="314%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/249811396&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
+                <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="faceRecognitionStatus" class="face-status">Recognizing...</div>
+
+    <script>
+        // Weather icons mapping using the weather-icons font
+        const weatherIcons = {
+            50: 'wi-day-sunny',
+            51: 'wi-day-cloudy',
+            52: 'wi-day-cloudy',
+            53: 'wi-day-showers',
+            54: 'wi-day-showers',
+            60: 'wi-cloudy',
+            61: 'wi-cloudy',
+            62: 'wi-showers',
+            63: 'wi-rain',
+            64: 'wi-rain',
+            65: 'wi-thunderstorm',
+            70: 'wi-night-clear',
+            71: 'wi-night-clear',
+            72: 'wi-night-clear',
+            73: 'wi-night-clear',
+            74: 'wi-night-clear',
+            75: 'wi-night-clear',
+            76: 'wi-night-alt-cloudy',
+            77: 'wi-night-clear',
+            80: 'wi-strong-wind',
+            81: 'wi-dust',
+            82: 'wi-humidity',
+            83: 'wi-fog',
+            84: 'wi-fog',
+            85: 'wi-fog',
+            90: 'wi-hot',
+            91: 'wi-thermometer',
+            92: 'wi-snow',
+            93: 'wi-snowflake-cold',
+            99: 'wi-alien'
+        };
+
+        const weatherConditionNames = {
+            50: 'Sunny',
+            51: 'Sunny Periods',
+            52: 'Sunny Intervals',
+            53: 'Sunny with Showers',
+            54: 'Sunny with Showers',
+            60: 'Cloudy',
+            61: 'Overcast',
+            62: 'Light Rain',
+            63: 'Rain',
+            64: 'Heavy Rain',
+            65: 'Thunderstorms',
+            70: 'Clear Night',
+            71: 'Clear Night',
+            72: 'Clear Night',
+            73: 'Clear Night',
+            74: 'Clear Night',
+            75: 'Clear Night',
+            76: 'Cloudy Night',
+            77: 'Clear Night',
+            80: 'Windy',
+            81: 'Dry',
+            82: 'Humid',
+            83: 'Foggy',
+            84: 'Misty',
+            85: 'Hazy',
+            90: 'Hot',
+            91: 'Warm',
+            92: 'Cool',
+            93: 'Cold',
+            99: 'Unknown'
+        };
+
+        function getWeatherIcon(iconCode) {
+            if (!iconCode) return 'wi-day-cloudy';
+            iconCode = parseInt(iconCode);
+            return weatherIcons[iconCode] || 'wi-day-cloudy';
+        }
+
+        function getWeatherConditionName(iconCode) {
+            if (!iconCode) return 'Unknown';
+            iconCode = parseInt(iconCode);
+            return weatherConditionNames[iconCode] || 'Unknown';
+        }
+
+        let videoStream = null;
+        let lastRecognizedUser = "Unknown";
+        let lastDetectedEmotion = "Neutral";
+        let isVoicePolling = true; // Initialize voice polling flag
+        let lastCommand = null; // Initialize last command tracker
+
+        async function startCamera() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: {
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                });
+                videoStream = stream;
+                document.getElementById('cameraFeed').srcObject = stream;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                document.getElementById('cameraFeed').style.backgroundColor = "black";
+            }
+        }
+
+        function updateDateTime() {
+            const now = new Date();
+
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            document.getElementById('current-time').textContent = `${hours}:${minutes}`;
+
+            const options = { month: 'short', day: 'numeric', year: 'numeric' };
+            document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', options);
+
+            document.getElementById('weather-updated').textContent = `${hours}:${minutes}`;
+        }
+
+        let musicPlayer = null;
+
+    function isModalOpen(modalId) {
+        const modal = document.getElementById(modalId);
+        return modal && modal.style.display === 'block';
+    }
+
+    function closeAllModals() {
+        const modals = document.getElementsByClassName('modal');
+        for (let modal of modals) {
+            modal.style.display = 'none';
+        }
+        if (musicPlayer && !musicPlayer.paused) {
+            musicPlayer.pause();
+            musicPlayer.currentTime = 0;
+        }
+    }
+
+    function setupModals() {
+    const modals = document.getElementsByClassName('modal');
+    const closeButtons = document.getElementsByClassName('close');
+
+    document.getElementById('face-icon').onclick = function() {
+        closeAllModals();
+        detectFaceAndEmotion();
+    };
+
+    document.getElementById('outfit-icon').onclick = function() {
+        if (!isModalOpen('outfitModal')) {
+            closeAllModals();
+            document.getElementById('outfitModal').style.display = 'block';
+            fetchOutfitData();
+        }
+    };
+
+    document.getElementById('weather-icon').onclick = function() {
+        if (!isModalOpen('weatherModal')) {
+            closeAllModals();
+            document.getElementById('weatherModal').style.display = 'block';
+        }
+    };
+    document.getElementById('weather-widget').onclick = function() {
+        if (!isModalOpen('weatherModal')) {
+            closeAllModals();
+            document.getElementById('weatherModal').style.display = 'block';
+        }
+    };
+
+    document.getElementById('calendar-icon').onclick = function() {
+        if (!isModalOpen('calendarModal')) {
+            closeAllModals();
+            document.getElementById('calendarModal').style.display = 'block';
+            updateCalendarModal();
+        }
+    };
+    document.getElementById('schedule-widget').onclick = function() {
+        if (!isModalOpen('calendarModal')) {
+            closeAllModals();
+            document.getElementById('calendarModal').style.display = 'block';
+            updateCalendarModal();
+        }
+    };
+
+    document.getElementById('music-icon').onclick = function() {
+        if (!isModalOpen('musicModal')) {
+            closeAllModals();
+            document.getElementById('musicModal').style.display = 'block';
+            const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
+            document.getElementById('music-mood').textContent = currentEmotion;
+        }
+        if (musicPlayer && musicPlayer.paused) {
+            musicPlayer.play().catch(err => console.error("Music playback error:", err));
+        }
+    };
+
+            for (let i = 0; i < closeButtons.length; i++) {
+                closeButtons[i].onclick = function() {
+                    for (let j = 0; j < modals.length; j++) {
+                        modals[j].style.display = 'none';
+                    }
+                };
+            }
+
+            window.onclick = function(event) {
+                for (let i = 0; i < modals.length; i++) {
+                    if (event.target == modals[i]) {
+                        modals[i].style.display = 'none';
+                    }
+                }
+            };
+        }
+
+        async function detectFaceAndEmotion() {
+            const statusElement = document.getElementById('faceRecognitionStatus');
+            statusElement.style.display = 'block';
+            statusElement.textContent = 'Recognizing face and emotion...';
+            
+            try {
+                // Capture current frame from video
+                const videoElement = document.getElementById('cameraFeed');
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                
+                // Convert to blob
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+                
+                // Create FormData for face recognition
+                const formData = new FormData();
+                formData.append('image', blob, 'capture.jpg');
+                
+                // Create a copy of the blob for emotion recognition
+                const emotionBlob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg'));
+                const emotionFormData = new FormData();
+                emotionFormData.append('image', emotionBlob, 'emotion_capture.jpg');
+                
+                // Run face and emotion recognition in parallel
+                const [faceResponse, emotionResponse] = await Promise.all([
+                    fetch('http://localhost:5002/recognize_face', {
+                        method: 'POST',
+                        body: formData
+                    }),
+                    fetch('http://localhost:5003/recognize_emotion', {
+                        method: 'POST',
+                        body: emotionFormData
+                    })
+                ]);
+                
+                const faceData = await faceResponse.json();
+                const emotionData = await emotionResponse.json();
+                
+                // Update user display with face recognition result
+                if (faceData.success) {
+                    const userElement = document.getElementById('current-user');
+                    lastRecognizedUser = faceData.name || "Unknown";
+                    userElement.textContent = `Current user: ${lastRecognizedUser}`;
+                } else {
+                    // No face detected or recognition failed - set user to "Unknown"
+                    const userElement = document.getElementById('current-user');
+                    lastRecognizedUser = "Unknown";
+                    userElement.textContent = `Current user: ${lastRecognizedUser}`;
+                }
+                
+                // Update emotion display with emotion recognition result
+                if (emotionData.success) {
+                    lastDetectedEmotion = emotionData.emotion;
+                    document.getElementById('emotion-tag').textContent = `Emotion: ${lastDetectedEmotion}`;
+                    document.getElementById('music-mood').textContent = lastDetectedEmotion;
+                }
+                
+                // Show combined status message
+                let statusMessage = "";
+                if (faceData.success) {
+                    statusMessage = `Recognized: ${lastRecognizedUser}`;
+                } else {
+                    statusMessage = "Face: " + (faceData.message || "Unknown error");
+                }
+                
+                if (emotionData.success) {
+                    statusMessage += ` | Emotion: ${lastDetectedEmotion}`;
+                    if (emotionData.confidence) {
+                        statusMessage += ` (${emotionData.confidence.toFixed(1)}%)`;
+                    }
+                }
+                
+                statusElement.textContent = statusMessage;
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 3000);
+                
+            } catch (error) {
+                console.error('Error during recognition:', error);
+                
+                // Set default values on error
+                const userElement = document.getElementById('current-user');
+                lastRecognizedUser = "Unknown";
+                userElement.textContent = `Current user: ${lastRecognizedUser}`;
+                
+                statusElement.textContent = 'Recognition failed: ' + error.message;
+                setTimeout(() => {
+                    statusElement.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // Function to automatically recognize faces and emotions periodically
+        function setupPeriodicRecognition(intervalInSeconds = 30) {
+            // Initial recognition after 5 seconds
+            setTimeout(detectFaceAndEmotion, 5000);
+            
+            // Then set up the regular interval
+            setInterval(detectFaceAndEmotion, intervalInSeconds * 1000);
+        }
+
+        async function fetchWeatherAndOutfitData() {
+            try {
+                document.getElementById('temperature').textContent = 'Loading...';
+                document.getElementById('humidity').textContent = 'Fetching data...';
+                document.getElementById('condition').innerHTML = '<i class="wi wi-refresh weather-icon"></i> Please wait...';
+
+                const response = await fetch('http://localhost:5001/weather');
+                const data = await response.json();
+
+                console.log('Weather API Response:', data);
+
+                localStorage.setItem('weatherFullData', JSON.stringify(data));
+
+                if (data.weather) {
+                    console.log('Current Weather:', data.weather);
+
+                    const weatherIconClass = getWeatherIcon(data.weather.icon);
+                    const weatherCondition = getWeatherConditionName(data.weather.icon);
+
+                    document.getElementById('temperature').textContent = `${data.weather.temperature || 'N/A'}°C`;
+                    document.getElementById('humidity').textContent = `Humidity: ${data.weather.humidity || 'N/A'}%`;
+                    document.getElementById('condition').innerHTML = `<i class="wi ${weatherIconClass} weather-icon"></i>`;
+
+                    document.getElementById('weather-temp').textContent = `${data.weather.temperature || 'N/A'}°C`;
+                    document.getElementById('condition-icon').innerHTML = `<i class="wi ${weatherIconClass} weather-icon"></i>`;
+                    document.getElementById('condition-text').textContent = weatherCondition;
+                    document.getElementById('weather-humidity').textContent = `${data.weather.humidity || 'N/A'}%`;
+                    document.getElementById('weather-rainfall').textContent = `${data.weather.rainfall || '0'} mm`;
+                    document.getElementById('weather-uv').textContent = data.weather.uv_index || 'N/A';
+
+                    localStorage.setItem('outfitAdvice', data.outfit);
+                }
+
+                if (data.forecast && data.forecast.weatherForecast) {
+                    console.log('Forecast Data:', data.forecast.weatherForecast);
+
+                    updateForecast(data.forecast.weatherForecast);
+                } else {
+                    console.error('Forecast data not available in the API response', data.forecast);
+                    document.getElementById('forecast-container').innerHTML = '<div>No forecast data available</div>';
+                }
+
+            } catch (error) {
+                console.error('Error fetching weather data:', error);
+                document.getElementById('temperature').textContent = 'Error loading data';
+                document.getElementById('humidity').textContent = 'Please try again later';
+                document.getElementById('condition').innerHTML = '<i class="wi wi-na weather-icon"></i> Connection error';
+            }
+        }
+
+        function updateForecast(forecasts) {
+            const forecastContainer = document.getElementById('forecast-container');
+            forecastContainer.innerHTML = '';
+
+            console.log('Updating forecast with', forecasts.length, 'days');
+
+            const fiveDayForecast = forecasts.slice(0, 5);
+
+            fiveDayForecast.forEach(day => {
+                console.log('Processing forecast day:', day);
+
+                let formattedDate = day.week ? day.week.substring(0, 3) : 'N/A';
+                if (day.forecastDate) {
+                    try {
+                        const year = day.forecastDate.substring(0, 4);
+                        const month = parseInt(day.forecastDate.substring(4, 6)) - 1;
+                        const dayNum = day.forecastDate.substring(6, 8);
+                        const date = new Date(year, month, dayNum);
+                        formattedDate = date.toLocaleDateString('en-US', {weekday: 'short', month: 'short', day: 'numeric'});
+                    } catch (e) {
+                        console.error('Error formatting date:', e);
+                    }
+                }
+
+                const weatherIconClass = getWeatherIcon(day.ForecastIcon);
+                const weatherCondition = getWeatherConditionName(day.ForecastIcon);
+                const maxTemp = day.forecastMaxtemp && day.forecastMaxtemp.value ? day.forecastMaxtemp.value : 'N/A';
+                const minTemp = day.forecastMintemp && day.forecastMintemp.value ? day.forecastMintemp.value : 'N/A';
+
+                let rainDescription = 'N/A';
+                if (day.PSR) {
+                    const psrValue = parseInt(day.PSR);
+                    if (psrValue < 30) rainDescription = 'Low';
+                    else if (psrValue < 60) rainDescription = 'Medium';
+                    else rainDescription = 'High';
+                }
+
+                const dayElement = document.createElement('div');
+                dayElement.className = 'forecast-day';
+                dayElement.innerHTML = `
+                    <div class="forecast-date">${formattedDate}</div>
+                    <div class="forecast-icon"><i class="wi ${weatherIconClass} weather-icon"></i></div>
+                    <div class="forecast-temp">${maxTemp}°C / ${minTemp}°C</div>
+                    <div class="forecast-rain">Rain: ${rainDescription}</div>
+                `;
+                forecastContainer.appendChild(dayElement);
+            });
+        }
+
+        function updateWarnings(warnings) {
+            const warningsContainer = document.getElementById('weather-warnings-container');
+            const warningsElement = document.getElementById('weather-warnings');
+
+            if (warnings && warnings.length > 0) {
+                warningsContainer.style.display = 'block';
+                warningsElement.innerHTML = '';
+
+                warnings.forEach(warning => {
+                    const warningElement = document.createElement('div');
+                    warningElement.style.marginBottom = '10px';
+                    warningElement.innerHTML = `<strong>${warning.name}</strong>`;
+                    warningsElement.appendChild(warningElement);
+                });
+            } else {
+                warningsContainer.style.display = 'none';
+            }
+        }
+
+        function fetchOutfitData() {
+            document.getElementById('outfit-loading').style.display = 'flex';
+            document.getElementById('outfit-recommendations').innerHTML = '';
+    
+            fetch('http://localhost:5001/outfit')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Outfit API Response:', data);
+
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-image').src = data.image_path;
+
+                    document.getElementById('outfit-weather-info').textContent =
+                        `Based on weather (${data.test_weather.temperature}°C, Humidity: ${data.test_weather.humidity}%):`;
+
+                    // Display important events info
+                    if (data.important_events && data.important_events.length > 0) {
+                        const eventsList = data.important_events.map(event => {
+                            return `${event.time_str}: ${event.summary}`;
+                        }).join('<br>');
+                        document.getElementById('outfit-events').innerHTML = eventsList;
+                        document.getElementById('outfit-event-info').style.display = 'block';
+                    } else {
+                        document.getElementById('outfit-events').textContent = 'No important events today';
+                        document.getElementById('outfit-event-info').style.display = 'none';
+                    }
+
+                    document.getElementById('outfit-recommendations').innerHTML = `
+                        <div class="outfit-item">
+                            <p>${data.advice}</p>
+                        </div>`;
+                })
+                .catch(error => {
+                    console.error('Error fetching outfit data:', error);
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-recommendations').innerHTML =
+                        '<div class="outfit-item"><p>Error loading outfit recommendations</p></div>';
+                });
+        }
+
+        // Voice Recognition Integration
+        async function pollVoiceCommands() {
+            if (!isVoicePolling) return;
+            try {
+                console.log('Requesting voice command from backend...');
+                const response = await fetch('http://localhost:5004/voice');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Voice command received:', data);
+
+                if (data.status === 'success' && data.command) {
+                    processVoiceCommand(data.command);
+                    showErrorMessage(`Voice command processed: ${data.command}`, 3000);
+                } else if (data.status === 'error') {
+                    console.error('Voice recognition error:', data.message);
+                    showErrorMessage('Voice recognition error: ' + data.message, 3000);
+                } else {
+                    console.log('No voice command detected, continuing to poll...');
+                }
+            } catch (error) {
+                console.error('Error fetching voice command:', error);
+                showErrorMessage('Failed to fetch voice command: ' + error.message, 5000);
+            }
+            if (isVoicePolling) {
+                setTimeout(pollVoiceCommands, 4000);
+            }
+        }
+
+        function processVoiceCommand(command) {
+            console.log('Processing voice command:', command);
+
+            const validCommands = [
+                'weather', 'forecast',
+                'calendar', 'schedule',
+                'outfit', 'clothes',
+                'music', 'play',
+                'stop', 'turn off',
+                'face', 'emotion'
+            ];
+
+            const isValidCommand = validCommands.some(keyword => command.includes(keyword));
+
+            if (!isValidCommand) {
+                showErrorMessage(`Unknown command: ${command}`, 3000);
+                return;
+            }
+
+            if (command.includes('weather') || command.includes('forecast')) {
+                if (!isModalOpen('weatherModal')) {
+                    closeAllModals();
+                    document.getElementById('weatherModal').style.display = 'block';
+                    fetchWeatherAndOutfitData();
+                }
+            } else if (command.includes('calendar') || command.includes('schedule')) {
+                if (!isModalOpen('calendarModal')) {
+                    closeAllModals();
+                    document.getElementById('calendarModal').style.display = 'block';
+                    updateCalendarModal();
+                }
+            } else if (command.includes('outfit') || command.includes('clothes')) {
+                if (!isModalOpen('outfitModal')) {
+                    closeAllModals();
+                    document.getElementById('outfitModal').style.display = 'block';
+                    fetchOutfitData();
+                }
+            } else if (command.includes('music') || command.includes('play')) {
+                if (!isModalOpen('musicModal')) {
+                    closeAllModals();
+                    document.getElementById('musicModal').style.display = 'block';
+                    const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
+                    document.getElementById('music-mood').textContent = currentEmotion;
+                }
+                if (musicPlayer && musicPlayer.paused) {
+                    musicPlayer.play().catch(err => console.error("Music playback error:", err));
+                }
+            } else if (command.includes('stop') || command.includes('turn off')) {
+                isVoicePolling = false;
+                closeAllModals();
+                console.log('Voice recognition stopped');
+                showErrorMessage('Voice recognition stopped. Refresh to restart.', 3000);
+            } else if (command.includes('face') || command.includes('emotion')) {
+                closeAllModals();
+                detectFaceAndEmotion();
+            }
+        }
+
+        // Helper function to show error messages
+        function showErrorMessage(message, duration) {
+            let messageDiv = document.getElementById('message-notification');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'message-notification';
+                messageDiv.style.position = 'fixed';
+                messageDiv.style.top = '20px';
+                messageDiv.style.left = '50%';
+                messageDiv.style.transform = 'translateX(-50%)';
+                messageDiv.style.padding = '10px 20px';
+                messageDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                messageDiv.style.color = 'white';
+                messageDiv.style.borderRadius = '5px';
+                messageDiv.style.zIndex = '9999';
+                messageDiv.style.transition = 'opacity 0.5s';
+                messageDiv.style.opacity = '0';
+                document.body.appendChild(messageDiv);
+            }
+            
+            messageDiv.textContent = message;
+            messageDiv.style.opacity = '1';
+            
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+            }, duration || 3000);
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            startCamera();
+            updateDateTime();
+            setInterval(updateDateTime, 60000);
+            setupModals();
+
+            // Add styles for face recognition status
+            const styleElement = document.createElement('style');
+            styleElement.textContent = `
+                .face-status {
+                    position: fixed;
+                    bottom: 80px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: rgba(0, 0, 0, 0.7);
+                    color: white;
+                    padding: 10px 20px;
+                    border-radius: 20px;
+                    display: none;
+                    z-index: 1000;
+                }
+            `;
+            document.head.appendChild(styleElement);
+
+            fetchWeatherAndOutfitData();
+            setInterval(fetchWeatherAndOutfitData, 30 * 60 * 1000);
+            
+            // Set up periodic face and emotion recognition (every 30 seconds)
+            setupPeriodicRecognition(30);
+            pollVoiceCommands();
+            showErrorMessage("Voice command activated! Say a command...", 3000);
+        });
+    </script>
+    <script src="accessories.js"></script>
+    <script src="calendar.js"></script>
+    <script src="outfit_accessories.js"></script>
+</body>
+</html>
