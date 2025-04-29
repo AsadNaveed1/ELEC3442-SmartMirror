@@ -7,6 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <!-- Add Weather Icons Font -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/weather-icons/2.0.10/css/weather-icons.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <style>
         /* Ensure the weather icons display at a good size */
         .weather-icon {
@@ -648,45 +649,46 @@
         }
 
         function fetchOutfitData() {
-    document.getElementById('outfit-loading').style.display = 'flex';
-    document.getElementById('outfit-recommendations').innerHTML = '';
+            document.getElementById('outfit-loading').style.display = 'flex';
+            document.getElementById('outfit-recommendations').innerHTML = '';
     
-    fetch('http://localhost:5001/outfit')
-        .then(response => response.json())
-        .then(data => {
-            console.log('Outfit API Response:', data);
+            fetch('http://localhost:5001/outfit')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Outfit API Response:', data);
 
-            document.getElementById('outfit-loading').style.display = 'none';
-            document.getElementById('outfit-image').src = data.image_path;
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-image').src = data.image_path;
 
-            document.getElementById('outfit-weather-info').textContent =
-                `Based on weather (${data.test_weather.temperature}°C, Humidity: ${data.test_weather.humidity}%):`;
+                    document.getElementById('outfit-weather-info').textContent =
+                        `Based on weather (${data.test_weather.temperature}°C, Humidity: ${data.test_weather.humidity}%):`;
 
-            // Display important events info
-            if (data.important_events && data.important_events.length > 0) {
-                const eventsList = data.important_events.map(event => {
-                    return `${event.time_str}: ${event.summary}`;
-                }).join('<br>');
-                document.getElementById('outfit-events').innerHTML = eventsList;
-                document.getElementById('outfit-event-info').style.display = 'block';
-            } else {
-                document.getElementById('outfit-events').textContent = 'No important events today';
-                document.getElementById('outfit-event-info').style.display = 'none';
-            }
+                    // Display important events info
+                    if (data.important_events && data.important_events.length > 0) {
+                        const eventsList = data.important_events.map(event => {
+                            return `${event.time_str}: ${event.summary}`;
+                        }).join('<br>');
+                        document.getElementById('outfit-events').innerHTML = eventsList;
+                        document.getElementById('outfit-event-info').style.display = 'block';
+                    } else {
+                        document.getElementById('outfit-events').textContent = 'No important events today';
+                        document.getElementById('outfit-event-info').style.display = 'none';
+                    }
 
-            document.getElementById('outfit-recommendations').innerHTML = `
-                <div class="outfit-item">
-                    <p>${data.advice}</p>
-                </div>`;
-        })
-        .catch(error => {
-            console.error('Error fetching outfit data:', error);
-            document.getElementById('outfit-loading').style.display = 'none';
-            document.getElementById('outfit-recommendations').innerHTML =
-                '<div class="outfit-item"><p>Error loading outfit recommendations</p></div>';
-        });
-}
-                // Voice Recognition Integration
+                    document.getElementById('outfit-recommendations').innerHTML = `
+                        <div class="outfit-item">
+                            <p>${data.advice}</p>
+                        </div>`;
+                })
+                .catch(error => {
+                    console.error('Error fetching outfit data:', error);
+                    document.getElementById('outfit-loading').style.display = 'none';
+                    document.getElementById('outfit-recommendations').innerHTML =
+                        '<div class="outfit-item"><p>Error loading outfit recommendations</p></div>';
+                });
+        }
+
+        // Voice Recognition Integration
         async function pollVoiceCommands() {
             if (!isVoicePolling) return;
             try {
@@ -717,62 +719,90 @@
         }
 
         function processVoiceCommand(command) {
-    console.log('Processing voice command:', command);
+            console.log('Processing voice command:', command);
 
-    const validCommands = [
-        'weather', 'forecast',
-        'calendar', 'schedule',
-        'outfit', 'clothes',
-        'music', 'play',
-        'stop', 'turn off',
-        'face', 'emotion'
-    ];
+            const validCommands = [
+                'weather', 'forecast',
+                'calendar', 'schedule',
+                'outfit', 'clothes',
+                'music', 'play',
+                'stop', 'turn off',
+                'face', 'emotion'
+            ];
 
-    const isValidCommand = validCommands.some(keyword => command.includes(keyword));
+            const isValidCommand = validCommands.some(keyword => command.includes(keyword));
 
-    if (!isValidCommand) {
-        showErrorMessage(`Unknown command: ${command}`, 3000);
-        return;
-    }
+            if (!isValidCommand) {
+                showErrorMessage(`Unknown command: ${command}`, 3000);
+                return;
+            }
 
-    if (command.includes('weather') || command.includes('forecast')) {
-        if (!isModalOpen('weatherModal')) {
-            closeAllModals();
-            document.getElementById('weatherModal').style.display = 'block';
-            fetchWeatherAndOutfitData();
+            if (command.includes('weather') || command.includes('forecast')) {
+                if (!isModalOpen('weatherModal')) {
+                    closeAllModals();
+                    document.getElementById('weatherModal').style.display = 'block';
+                    fetchWeatherAndOutfitData();
+                }
+            } else if (command.includes('calendar') || command.includes('schedule')) {
+                if (!isModalOpen('calendarModal')) {
+                    closeAllModals();
+                    document.getElementById('calendarModal').style.display = 'block';
+                    updateCalendarModal();
+                }
+            } else if (command.includes('outfit') || command.includes('clothes')) {
+                if (!isModalOpen('outfitModal')) {
+                    closeAllModals();
+                    document.getElementById('outfitModal').style.display = 'block';
+                    fetchOutfitData();
+                }
+            } else if (command.includes('music') || command.includes('play')) {
+                if (!isModalOpen('musicModal')) {
+                    closeAllModals();
+                    document.getElementById('musicModal').style.display = 'block';
+                    const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
+                    document.getElementById('music-mood').textContent = currentEmotion;
+                }
+                if (musicPlayer && musicPlayer.paused) {
+                    musicPlayer.play().catch(err => console.error("Music playback error:", err));
+                }
+            } else if (command.includes('stop') || command.includes('turn off')) {
+                isVoicePolling = false;
+                closeAllModals();
+                console.log('Voice recognition stopped');
+                showErrorMessage('Voice recognition stopped. Refresh to restart.', 3000);
+            } else if (command.includes('face') || command.includes('emotion')) {
+                closeAllModals();
+                detectFaceAndEmotion();
+            }
         }
-    } else if (command.includes('calendar') || command.includes('schedule')) {
-        if (!isModalOpen('calendarModal')) {
-            closeAllModals();
-            document.getElementById('calendarModal').style.display = 'block';
-            updateCalendarModal();
+
+        // Helper function to show error messages
+        function showErrorMessage(message, duration) {
+            let messageDiv = document.getElementById('message-notification');
+            if (!messageDiv) {
+                messageDiv = document.createElement('div');
+                messageDiv.id = 'message-notification';
+                messageDiv.style.position = 'fixed';
+                messageDiv.style.top = '20px';
+                messageDiv.style.left = '50%';
+                messageDiv.style.transform = 'translateX(-50%)';
+                messageDiv.style.padding = '10px 20px';
+                messageDiv.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+                messageDiv.style.color = 'white';
+                messageDiv.style.borderRadius = '5px';
+                messageDiv.style.zIndex = '9999';
+                messageDiv.style.transition = 'opacity 0.5s';
+                messageDiv.style.opacity = '0';
+                document.body.appendChild(messageDiv);
+            }
+            
+            messageDiv.textContent = message;
+            messageDiv.style.opacity = '1';
+            
+            setTimeout(() => {
+                messageDiv.style.opacity = '0';
+            }, duration || 3000);
         }
-    } else if (command.includes('outfit') || command.includes('clothes')) {
-        if (!isModalOpen('outfitModal')) {
-            closeAllModals();
-            document.getElementById('outfitModal').style.display = 'block';
-            fetchOutfitData();
-        }
-    } else if (command.includes('music') || command.includes('play')) {
-        if (!isModalOpen('musicModal')) {
-            closeAllModals();
-            document.getElementById('musicModal').style.display = 'block';
-            const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
-            document.getElementById('music-mood').textContent = currentEmotion;
-        }
-        if (musicPlayer && musicPlayer.paused) {
-            musicPlayer.play().catch(err => console.error("Music playback error:", err));
-        }
-    } else if (command.includes('stop') || command.includes('turn off')) {
-        isVoicePolling = false;
-        closeAllModals();
-        console.log('Voice recognition stopped');
-        showErrorMessage('Voice recognition stopped. Refresh to restart.', 3000);
-    } else if (command.includes('face') || command.includes('emotion')) {
-        closeAllModals();
-        detectFaceAndEmotion();
-    }
-}
 
         document.addEventListener('DOMContentLoaded', function() {
             startCamera();
@@ -807,7 +837,8 @@
             showErrorMessage("Voice command activated! Say a command...", 3000);
         });
     </script>
-
+    <script src="accessories.js"></script>
     <script src="calendar.js"></script>
+    <script src="outfit_accessories.js"></script>
 </body>
 </html>
