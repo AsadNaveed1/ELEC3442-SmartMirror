@@ -137,22 +137,64 @@ def get_weather_forecast() -> dict:
         return {}
 
 
-def get_outfit_advice(weather_description: List[str], user: str, specialneed: str) -> str:
+def get_outfit_advice(weather_description: List[str], user: str, specialneed: str, events=None) -> str:
     filepath = f"Users/{user}"
     file_names = os.listdir(filepath)
     available_outfits = [f for f in file_names if os.path.isfile(os.path.join(filepath, f))]
 
-    weather_description = (
-        f"当前天气条件如下:\n"
-        f"温度: {weather_description[0]}°C\n"
-        f"湿度: {weather_description[1]}%\n"
-        f"降雨量: {weather_description[2]} mm\n"
-        f"紫外线指数: {weather_description[3]}\n\n"
-        f"可选的穿搭组合有:\n"
+    # Define important event keywords
+    important_event_keywords = [
+        "meeting", "conference", "presentation", "interview", "speech",
+        "wedding", "ceremony", "dinner", "lunch", "party", "gala", 
+        "function", "event", "celebration", "birthday", "anniversary",
+        "sports", "game", "match", "competition", "tournament", "workout",
+        "date", "formal", "official", "business", "exhibition", "show"
+    ]
+    
+    # Filter for important events
+    important_events = []
+    if events and len(events) > 0:
+        for event in events:
+            event_summary = event.get('summary', '').lower()
+            event_description = event.get('description', '').lower()
+            
+            # Check if any important keywords are in the event summary or description
+            is_important = any(keyword in event_summary or keyword in event_description for keyword in important_event_keywords)
+            
+            if is_important:
+                important_events.append(event)
+    
+    # Create event description section
+    event_description = ""
+    if important_events:
+        event_description = "Important events today:\n"
+        for event in important_events[:3]:  # Limit to 3 events to keep prompt reasonable
+            event_time = event.get('time_str', 'All day')
+            event_summary = event.get('summary', 'Untitled event')
+            event_location = event.get('location', '')
+            event_description += f"- {event_time}: {event_summary}"
+            if event_location:
+                event_description += f" at {event_location}"
+            event_description += "\n"
+    else:
+        event_description = "No important events scheduled for today.\n"
+
+    # Complete weather and events context for the AI 
+    context_description = (
+        f"Current weather conditions:\n"
+        f"Temperature: {weather_description[0]}°C\n"
+        f"Humidity: {weather_description[1]}%\n"
+        f"Rainfall: {weather_description[2]} mm\n"
+        f"UV Index: {weather_description[3]}\n\n"
+        f"{event_description}\n"
+        f"Available outfit options:\n"
         f"{', '.join(available_outfits)}\n\n"
-        f"根据上述天气数据和可选的穿搭组合，请推荐最适合的一套衣服。"
-        f"特殊需求：{specialneed}"
-        f"请只回复你推荐的穿搭图片的文件名，包含一句最简短的原因（加上衣服的emoji），以英文回答。格式为xxx.jpg:原因"
+        f"Based on the weather data above, the important events scheduled for today, and the available outfit options, "
+        f"please recommend the most suitable outfit. If there are important meetings, presentations, dates, or other formal occasions, "
+        f"recommend more formal attire. If there are sports activities, recommend suitable athletic wear."
+        f"Special needs: {specialneed}\n"
+        f"Please only reply with your recommended outfit filename, followed by a very short reason (include a clothing emoji). "
+        f"Answer in English. Format: xxx.jpg:reason"
     )
 
     url = "https://api.deepseek.com/chat/completions"
@@ -160,16 +202,16 @@ def get_outfit_advice(weather_description: List[str], user: str, specialneed: st
     payload = json.dumps({
         "messages": [
             {
-                "content": "你是一个专业的穿搭助手，需要根据天气情况从给定的穿搭选项中选择最合适的一套。",
+                "content": "You are a professional styling assistant who needs to recommend the most suitable outfit based on weather conditions and important scheduled events from the available options.",
                 "role": "system"
             },
             {
-                "content": weather_description,
+                "content": context_description,
                 "role": "user"
             }
         ],
         "model": "deepseek-chat",
-        "temperature": 0.3,  # 降低随机性，使选择更确定性
+        "temperature": 0.3,
         "max_tokens": 50
     })
 
@@ -182,13 +224,14 @@ def get_outfit_advice(weather_description: List[str], user: str, specialneed: st
     response = requests.post(url, headers=headers, data=payload)
     response_data = response.json()
 
-    # 获取AI推荐的穿搭
+    # Get the AI outfit recommendation
     ai_recommendation = response_data["choices"][0]["message"]["content"].strip()
     recommended_outfit = ai_recommendation.split(":")
     outfit_path = os.path.join(filepath, recommended_outfit[0])
     filepath = outfit_path
 
-    return ai_recommendation, filepath
+    return ai_recommendation, filepath, important_events
+
 
 def get_song_advice(mood=None):
     # MODIFY THIS LINE TO CHANGE THE MOOD MANUALLY - this is the only place to change
@@ -206,16 +249,16 @@ def get_song_advice(mood=None):
                 return None
                 
         prompt = (
-            f"你是一个专业的音乐推荐助手，需要根据用户心情从以下歌曲中选择最合适的一首:\n"
-            f"当前用户心情: {mood}\n\n"
-            f"可选的歌曲列表:\n"
+            f"You are a professional music recommendation assistant who needs to select the most suitable song based on the user's mood from the following list:\n"
+            f"Current user mood: {mood}\n\n"
+            f"Available songs:\n"
         )
         for song in song_data["songs"]:
             prompt += f"- {song['name']} by {song['artist']} genre: {song['genre']}\n"
 
         prompt += (
-            f"\n请根据用户心情('{mood}')推荐最适合的一首歌。"
-            f"请只回复你推荐的歌曲名称,作者，必须根据我给你的输出的名字，格式为歌曲名字:作者"
+            f"\nBased on the user's mood ('{mood}'), please recommend the most suitable song."
+            f"Please only reply with the song name and artist, using the exact names from the list I provided. Format: song name:artist"
         )
         
         # Call the AI model
@@ -223,7 +266,7 @@ def get_song_advice(mood=None):
         payload = json.dumps({
             "messages": [
                 {
-                    "content": "你是一个专业的音乐推荐助手，需要根据用户心情从给定的歌曲中选择最合适的一首。",
+                    "content": "You are a professional music recommendation assistant who needs to select the most suitable song based on the user's mood from the given options.",
                     "role": "system"
                 },
                 {
@@ -306,14 +349,35 @@ def get_weather():
     current_weather = get_current_weather()
     forecast = get_weather_forecast()
 
+    # Get today's calendar events
+    calendar_service = google_calendar.get_calendar_service()
+    calendar_events = google_calendar.get_upcoming_events(days=1, max_results=5)
+    
+    today_events = []
+    if calendar_events and 'events' in calendar_events:
+        today = datetime.now().strftime("%b %d, %Y")
+        
+        for event in calendar_events['events']:
+            event_date = event.get('date_str', '')
+            if event_date == today:
+                today_events.append(event)
+
     weather_description = [current_weather["temperature"], current_weather["humidity"], current_weather["rainfall"],
                            current_weather["uv_index"]]
     user = "victor"
 
-    outfit_advice, filepath = get_outfit_advice(weather_description, user, specialneed="None")
+    # Include events in outfit advice request
+    outfit_advice, filepath, important_events = get_outfit_advice(
+        weather_description, 
+        user, 
+        specialneed="None", 
+        events=today_events
+    )
+    
     outfit_advice = outfit_advice.split(":")
     outfit_advice = outfit_advice[1]
     print("Weather values used:", weather_description)
+    print("Important events considered:", [e.get('summary', 'Untitled') for e in important_events])
     print("Outfit advice:", outfit_advice)
     print("Image path:", filepath)
 
@@ -321,26 +385,51 @@ def get_weather():
         "weather": current_weather,
         "forecast": forecast,
         "outfit": outfit_advice,
-        "image_path": filepath
+        "image_path": filepath,
+        "events": today_events,
+        "important_events": important_events
     })
 
 
 # New dedicated endpoint for outfit recommendations
 @app.route('/outfit')
 def get_outfit():
-    # For testing different weather conditions - change these values as needed
-    # Format: [temperature, humidity, rainfall, uv_index]
+    # Get current weather
     current_weather = get_current_weather()
-    #test_weather = ["10", "90", "0", "78"]
-    test_weather = [current_weather['temperature'],current_weather['humidity'],current_weather['rainfall'],current_weather['uv_index']]
+    
+    # Get today's calendar events
+    calendar_events = google_calendar.get_upcoming_events(days=1, max_results=5)
+    
+    today_events = []
+    if calendar_events and 'events' in calendar_events:
+        today = datetime.now().strftime("%b %d, %Y")
+        
+        for event in calendar_events['events']:
+            event_date = event.get('date_str', '')
+            if event_date == today:
+                today_events.append(event)
+
+    # Use real weather for the recommendation
+    test_weather = [
+        current_weather['temperature'],
+        current_weather['humidity'],
+        current_weather['rainfall'],
+        current_weather['uv_index']
+    ]
 
     user = "victor"
-    outfit_advice, filepath = get_outfit_advice(test_weather, user, specialneed="None")
+    outfit_advice, filepath, important_events = get_outfit_advice(
+        test_weather, 
+        user, 
+        specialneed="None", 
+        events=today_events
+    )
 
     if ":" in outfit_advice:
         outfit_advice = outfit_advice.split(":")[1]
 
-    print("Test weather values used:", test_weather)
+    print("Weather values used:", test_weather)
+    print("Important events considered:", [e.get('summary', 'Untitled') for e in important_events])
     print("Outfit advice:", outfit_advice)
     print("Image path:", filepath)
 
@@ -352,7 +441,9 @@ def get_outfit():
             "humidity": test_weather[1],
             "rainfall": test_weather[2],
             "uv_index": test_weather[3]
-        }
+        },
+        "events": today_events,
+        "important_events": important_events
     })
 
 # A new endpoint to get song recommendations
