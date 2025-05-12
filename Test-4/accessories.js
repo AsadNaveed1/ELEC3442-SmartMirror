@@ -223,7 +223,7 @@ function fetchAvailableAccessories() {
     const loadingIndicator = document.getElementById('loading-indicator');
     if (loadingIndicator) loadingIndicator.style.display = 'block';
     
-    fetch('http://10.68.242.161:5002/status', { signal: AbortSignal.timeout(3000) })
+    fetch('http://localhost:5002/status', { signal: AbortSignal.timeout(3000) })
         .then(response => response.json())
         .then(data => {
             if (loadingIndicator) loadingIndicator.style.display = 'none';
@@ -244,7 +244,7 @@ function fetchAvailableAccessories() {
             
             const statusElement = document.getElementById('accessories-status');
             if (statusElement) {
-                statusElement.textContent = 'Error loading accessories. Is the server running on your laptop?';
+                statusElement.textContent = 'Error loading accessories. Is the server running?';
                 statusElement.style.color = '#ff5252';
             }
         });
@@ -374,7 +374,7 @@ function applyAccessory(accessoryName) {
     
     // Use a timeout to prevent potential fetch request flooding
     setTimeout(() => {
-        fetch('http://10.68.242.161:5002/set_active_accessory', {
+        fetch('http://localhost:5002/set_active_accessory', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -392,7 +392,7 @@ function applyAccessory(accessoryName) {
             console.error('Error setting active accessory:', error);
             
             if (statusElement) {
-                statusElement.textContent = 'Error connecting to accessory service on your laptop';
+                statusElement.textContent = 'Error connecting to accessory service';
                 statusElement.style.color = '#ff5252';
             }
         });
@@ -443,7 +443,7 @@ async function processVideoFrame() {
         const formData = new FormData();
         formData.append('image', blob, 'face.jpg');
         
-        const response = await fetch('http://10.68.242.161:5002/process_frame', {
+        const response = await fetch('http://localhost:5002/process_frame', {
             method: 'POST',
             body: formData,
             signal: AbortSignal.timeout(3000)
@@ -484,7 +484,7 @@ async function processVideoFrame() {
         // Display error in status
         const statusElement = document.getElementById('accessories-status');
         if (statusElement) {
-            statusElement.textContent = 'Error connecting to accessory service on your laptop';
+            statusElement.textContent = 'Error connecting to accessory service';
             statusElement.style.color = '#ff5252';
         }
         

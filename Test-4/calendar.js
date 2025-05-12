@@ -1,4 +1,3 @@
-
 let calendarData = {
     events: [],
     eventsByDate: {}
@@ -16,6 +15,7 @@ async function fetchCalendarEvents() {
         calendarData.eventsByDate = data.events_by_date || {};
         
         updateCalendarWidget();
+        updateCalendarModal();
         return data;
     } catch (error) {
         console.error('Error fetching calendar events:', error);
@@ -28,18 +28,13 @@ function updateCalendarWidget() {
     if (!widgetContent) return;
     
     const today = new Date();
-    const todayStr = today.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    // Format the date to match exactly how it comes from the backend
+    const todayStr = today.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
     
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowStr = tomorrow.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    console.log("Looking for events with date:", todayStr);
+    console.log("Available dates in data:", Object.keys(calendarData.eventsByDate));
     
-    const todayEvents = [];
-    for (const dateStr in calendarData.eventsByDate) {
-        if (dateStr.includes(today.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }))) {
-            todayEvents.push(...calendarData.eventsByDate[dateStr]);
-        }
-    }
+    const todayEvents = calendarData.eventsByDate[todayStr] || [];
     
     todayEvents.sort((a, b) => {
         if (a.all_day && !b.all_day) return -1;

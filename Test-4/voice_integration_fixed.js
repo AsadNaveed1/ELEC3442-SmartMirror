@@ -1,9 +1,5 @@
-// voice_integration_fixed.js - Smart Mirror Voice Command Integration
-// This is a fixed version to replace the original voice_integration.js
 
-// Use a self-executing function to prevent variable conflicts
 (function() {
-    // Private variables within this scope
     let _isVoicePolling = true;
     let _lastCommand = null;
 
@@ -44,13 +40,11 @@
             console.log('Voice command response:', data);
 
             if (data.status === 'success' && data.command) {
-                const command = data.command.toLowerCase(); // Normalize to lowercase
-                _lastCommand = command; // Store the last command
+                const command = data.command.toLowerCase();
+                _lastCommand = command;
                 
                 console.log('Received voice command:', command);
-                // showErrorMessage(`Voice command detected: ${command}`, 3000);
                 
-                // Process the voice command
                 processVoiceCommand(command);
             } else if (data.status === 'error') {
                 console.error('Voice recognition error:', data.message);
@@ -60,11 +54,8 @@
             }
         } catch (error) {
             console.error('Error fetching voice command:', error);
-            // Comment out to avoid spamming the UI with error messages
-            // showErrorMessage('Failed to fetch voice command: ' + error.message, 3000);
         }
         
-        // Continue polling if enabled
         if (_isVoicePolling) {
             setTimeout(pollVoiceCommands, 2000);
         }
@@ -77,7 +68,6 @@
     function processVoiceCommand(command) {
         console.log('Processing voice command:', command);
 
-        // Fix for timing issues - ensure closeAllModals is defined
         const safeCloseAllModals = function() {
             if (typeof window.closeAllModals === 'function') {
                 console.log('Using defined closeAllModals function');
@@ -91,14 +81,11 @@
             }
         };
 
-        // Weather commands
         if (command.includes('weather') || command.includes('forecast')) {
             console.log('Opening weather modal');
             
-            // Close all modals first
             safeCloseAllModals();
             
-            // Force a slight delay to ensure DOM is ready
             setTimeout(() => {
                 const weatherModal = document.getElementById('weatherModal');
                 
@@ -106,13 +93,10 @@
                     console.log('Weather modal found, setting display to block');
                     weatherModal.style.display = 'block';
                     
-                    // Force repaint
                     weatherModal.offsetHeight;
                     
-                    // Verify it was set correctly
                     console.log('Weather modal display style set to:', weatherModal.style.display);
                     
-                    // Make sure to call fetchWeatherAndOutfitData
                     if (typeof window.fetchWeatherAndOutfitData === 'function') {
                         console.log('Fetching weather data');
                         window.fetchWeatherAndOutfitData();
@@ -120,7 +104,6 @@
                         console.warn('fetchWeatherAndOutfitData function not found');
                     }
                     
-                    // Ensure modal is visible after a short delay
                     setTimeout(() => {
                         if (weatherModal.style.display !== 'block') {
                             console.log('Weather modal not displaying, forcing again');
@@ -128,21 +111,17 @@
                         }
                     }, 100);
                     
-                    // showErrorMessage("Weather information displayed", 3000);
                 } else {
                     console.error('Weather modal not found in DOM');
                     showErrorMessage("Weather modal not available", 3000);
                 }
-            }, 100); // Small delay to ensure DOM is fully ready
+            }, 100);
         } 
-        // Calendar/Schedule commands
         else if (command.includes('calendar') || command.includes('schedule')) {
             console.log('Opening calendar modal');
             
-            // Close all modals first
             safeCloseAllModals();
             
-            // Force a slight delay to ensure DOM is ready
             setTimeout(() => {
                 const calendarModal = document.getElementById('calendarModal');
                 
@@ -150,10 +129,8 @@
                     console.log('Calendar modal found, setting display to block');
                     calendarModal.style.display = 'block';
                     
-                    // Force repaint
                     calendarModal.offsetHeight;
                     
-                    // Verify it was set correctly
                     console.log('Calendar modal display style set to:', calendarModal.style.display);
                     
                     if (typeof window.updateCalendarModal === 'function') {
@@ -170,14 +147,11 @@
                 }
             }, 100);
         } 
-        // Outfit commands
         else if (command.includes('outfit') || command.includes('clothes') || command.includes('wear')) {
             console.log('Opening outfit modal');
             
-            // Close all modals first
             safeCloseAllModals();
             
-            // Force a slight delay to ensure DOM is ready
             setTimeout(() => {
                 const outfitModal = document.getElementById('outfitModal');
                 
@@ -185,10 +159,8 @@
                     console.log('Outfit modal found, setting display to block');
                     outfitModal.style.display = 'block';
                     
-                    // Force repaint
                     outfitModal.offsetHeight;
                     
-                    // Verify it was set correctly
                     console.log('Outfit modal display style set to:', outfitModal.style.display);
                     
                     if (typeof window.fetchOutfitData === 'function') {
@@ -205,14 +177,11 @@
                 }
             }, 100);
         } 
-        // Music commands
         else if (command.includes('music') || command.includes('play')) {
             console.log('Opening music modal');
             
-            // Close all modals first
             safeCloseAllModals();
             
-            // Force a slight delay to ensure DOM is ready
             setTimeout(() => {
                 const musicModal = document.getElementById('musicModal');
                 
@@ -220,10 +189,8 @@
                     console.log('Music modal found, setting display to block');
                     musicModal.style.display = 'block';
                     
-                    // Force repaint
                     musicModal.offsetHeight;
                     
-                    // Verify it was set correctly
                     console.log('Music modal display style set to:', musicModal.style.display);
                     
                     const emotionTag = document.getElementById('emotion-tag');
@@ -246,11 +213,9 @@
                 }
             }, 100);
         } 
-        // Face/emotion recognition commands
         else if (command.includes('face') || command.includes('emotion') || command.includes('look')) {
             console.log('Performing face and emotion recognition');
             
-            // Close all modals first
             safeCloseAllModals();
             
             setTimeout(() => {
@@ -264,11 +229,9 @@
                 }
             }, 100);
         }
-        // Accessories commands
         else if (command.includes('accessories')) {
             console.log('Opening accessories modal');
             
-            // Close all modals first
             safeCloseAllModals();
             
             setTimeout(() => {
@@ -282,13 +245,11 @@
                 }
             }, 100);
         }
-        // Stop/exit commands
         else if (command.includes('stop') || command.includes('close') || command.includes('exit') || command.includes('turn off')) {
             console.log('Closing modals');
             safeCloseAllModals();
             showErrorMessage("Closed all open windows", 3000);
             
-            // If explicitly stopping voice recognition
             if (command.includes('stop voice') || command.includes('stop listening')) {
                 stopVoiceCommandPolling();
             }
@@ -328,7 +289,6 @@
         return modal && modal.style.display === 'block';
     }
 
-    // Define a robust showErrorMessage function
     function showErrorMessage(message, duration) {
         console.log("Voice Integration Message: " + message);
         
@@ -362,11 +322,9 @@
         }, duration || 3000);
     }
 
-    // Initialize voice command functionality when the document is loaded
     function initializeVoiceIntegration() {
         console.log('Voice integration initialized');
         
-        // Verify that modals exist in the DOM
         const modalIds = ['weatherModal', 'calendarModal', 'outfitModal', 'musicModal', 'accessoriesModal'];
         modalIds.forEach(id => {
             const modal = document.getElementById(id);
@@ -376,14 +334,12 @@
             }
         });
         
-        // Check if the main functions exist
         console.log('fetchWeatherAndOutfitData function exists:', typeof window.fetchWeatherAndOutfitData === 'function');
         console.log('updateCalendarModal function exists:', typeof window.updateCalendarModal === 'function');
         console.log('fetchOutfitData function exists:', typeof window.fetchOutfitData === 'function');
         console.log('detectFaceAndEmotion function exists:', typeof window.detectFaceAndEmotion === 'function');
         console.log('openAccessoriesModal function exists:', typeof window.openAccessoriesModal === 'function');
         
-        // Add a voice command indicator to the UI
         const voiceIndicator = document.createElement('div');
         voiceIndicator.id = 'voice-indicator';
         voiceIndicator.className = 'voice-indicator';
@@ -391,7 +347,6 @@
         voiceIndicator.title = 'Voice Commands Active';
         document.body.appendChild(voiceIndicator);
         
-        // Add voice indicator styles
         const style = document.createElement('style');
         style.textContent = `
             .voice-indicator {
@@ -425,7 +380,6 @@
         `;
         document.head.appendChild(style);
         
-        // Handle clicks on the voice indicator
         voiceIndicator.addEventListener('click', function() {
             if (_isVoicePolling) {
                 stopVoiceCommandPolling();
@@ -436,7 +390,6 @@
             }
         });
         
-        // Also add a click listener for the weather widget to directly verify it works
         const weatherWidget = document.getElementById('weather-widget');
         if (weatherWidget) {
             weatherWidget.addEventListener('click', function() {
@@ -452,28 +405,23 @@
             });
         }
         
-        // Check if the voice command service is available
         checkVoiceCommandService();
         
-        // Start polling immediately
         pollVoiceCommands();
     }
 
-    // Wait for document to be fully loaded before initializing
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initializeVoiceIntegration);
     } else {
         initializeVoiceIntegration();
     }
 
-    // Add a direct debug function that can be called from UI for testing
     window.debugProcessVoiceCommand = function(command) {
         console.log('Debug processing voice command:', command);
         processVoiceCommand(command);
         return true;
     };
 
-    // Export functions for use in other scripts
     window.startVoiceCommandPolling = startVoiceCommandPolling;
     window.stopVoiceCommandPolling = stopVoiceCommandPolling;
     window.processVoiceCommand = processVoiceCommand;

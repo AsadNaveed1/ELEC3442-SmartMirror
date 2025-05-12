@@ -256,7 +256,7 @@ function setupOutfitAccessoryUI() {
                 <button class="outfit-accessory-btn" data-accessory="none">Remove All</button>
             </div>
             <div id="service-warning" class="service-warning" style="display: none;">
-                Accessory service unavailable. Make sure it's running on your laptop (10.68.242.161).
+                Accessory service unavailable
             </div>
         `;
         
@@ -292,7 +292,7 @@ function checkBackendServices() {
         warningElement.style.display = 'none';
     }
     
-    fetch('http://10.68.242.161:5002/status', { 
+    fetch('http://localhost:5002/status', { 
         method: 'GET',
         headers: { 'Content-Type': 'application/json' },
         // Add a timeout to prevent hanging
@@ -458,7 +458,7 @@ function applyOutfitAccessory(accessory) {
     
     // Check if accessory service is available
     if (!accessoryServiceAvailable && accessory !== 'none') {
-        displayNotification('Accessory service is unavailable. Please start the server on your laptop.', 3000);
+        displayNotification('Accessory service is unavailable. Please start the server.', 3000);
         return;
     }
     
@@ -496,7 +496,7 @@ function applyOutfitAccessory(accessory) {
             formData.append('image', blob, 'outfit.jpg');
             formData.append('accessory', accessory);
             
-            fetch('http://10.68.242.161:5002/apply_accessory', {
+            fetch('http://localhost:5002/apply_accessory', {
                 method: 'POST',
                 body: formData,
                 signal: AbortSignal.timeout(5000)
@@ -525,7 +525,7 @@ function applyOutfitAccessory(accessory) {
             })
             .catch(error => {
                 console.error('Error applying accessory:', error);
-                displayNotification('Error applying accessory. Is the server running on your laptop?', 3000);
+                displayNotification('Error applying accessory. Is the server running?', 3000);
                 
                 if (loadingIndicator) {
                     loadingIndicator.style.display = 'none';
