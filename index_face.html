@@ -101,7 +101,7 @@
         </div>
     </div>
 
-    <div class="emotion-tag" id="emotion-tag">Emotion: Neutral</div>
+    <div class="emotion-tag" id="emotion-tag">Emotion: Loading...</div>
 
     <div class="icon-bar">
         <div class="icon" id="face-icon" title="Face Recognition"><i class="wi wi-alien"></i></div>
@@ -109,7 +109,6 @@
         <div class="icon" id="weather-icon" title="Weather"><i class="wi wi-day-sunny"></i></div>
         <div class="icon" id="calendar-icon" title="Calendar"><i class="wi wi-time-1"></i></div>
         <div class="icon" id="music-icon" title="Music"><i class="wi wi-tsunami"></i></div>
-        <div class="icon" id="voice-icon" title="Voice Command"><i class="wi wi-small-craft-advisory"></i></div>
     </div>
 
     <div id="outfitModal" class="modal">
@@ -200,14 +199,10 @@
         <div class="modal-content">
             <span class="close">&times;</span>
             <h2>Music Recommendations</h2>
-            <p>Based on your mood (<span id="music-mood">Neutral</span>) and preferences:</p>
+            <p>Based on your mood (<span id="music-mood">Loading...</span>) and preferences:</p>
             <div style="margin-top: 20px;">
-                <h3>Recommended Playlists</h3>
-                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 15px; margin-top: 15px;">
-                <iframe width="314%" height="166" scrolling="no" frameborder="no" allow="autoplay"
-                src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/249811396&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true"></iframe>
-                <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
-                </div>
+                <    <div id="music-container" style="width: 100%;">
+                    <div class="loading"></div>
                 </div>
             </div>
         </div>
@@ -298,6 +293,8 @@
         let videoStream = null;
         let lastRecognizedUser = "Unknown";
         let lastDetectedEmotion = "Neutral";
+        let isVoicePolling = true; // Initialize voice polling flag
+        let lastCommand = null; // Initialize last command tracker
 
         async function startCamera() {
             try {
@@ -328,44 +325,142 @@
             document.getElementById('weather-updated').textContent = `${hours}:${minutes}`;
         }
 
-        function setupModals() {
-            const modals = document.getElementsByClassName('modal');
-            const closeButtons = document.getElementsByClassName('close');
+        let musicPlayer = null;
 
-            document.getElementById('face-icon').onclick = function() {
-                detectFaceAndEmotion();
-            };
+        function updateMoodDisplay() {
+            fetch('http://localhost:5001/get_mood')
+                .then(response => response.json())
+                .then(data => {
+                    const mood = data.mood;
+                    document.getElementById('emotion-tag').textContent = `Emotion: ${mood}`;
+                    if (document.getElementById('musicModal').style.display === 'block') {
+                        document.getElementById('music-mood').textContent = mood;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching mood:', error);
+                    document.getElementById('emotion-tag').textContent = 'Emotion: Unknown';
+                });
+        }
 
-            document.getElementById('outfit-icon').onclick = function() {
-                document.getElementById('outfitModal').style.display = 'block';
-                fetchOutfitData();
-            };
+        let musicPollingInterval = null;
 
-            document.getElementById('weather-icon').onclick = function() {
-                document.getElementById('weatherModal').style.display = 'block';
-            };
-            document.getElementById('weather-widget').onclick = function() {
-                document.getElementById('weatherModal').style.display = 'block';
-            };
+        function fetchMusicRecommendation() {
+            const musicContainer = document.getElementById('music-container');
+            if (musicContainer) {
+                musicContainer.innerHTML = '<div class="loading"></div>';
+            }
 
-            document.getElementById('calendar-icon').onclick = function() {
-                document.getElementById('calendarModal').style.display = 'block';
-                updateCalendarModal();
-            };
-            document.getElementById('schedule-widget').onclick = function() {
-                document.getElementById('calendarModal').style.display = 'block';
-                updateCalendarModal();
-            };
+            fetch('http://localhost:5001/music')
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Music API Response:', data);
 
-            document.getElementById('music-icon').onclick = function() {
-                document.getElementById('musicModal').style.display = 'block';
-                const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
-                document.getElementById('music-mood').textContent = currentEmotion;
-            };
+                    if (data.embed_url) {
+                        if (musicContainer) {
+                            document.getElementById('music-mood').textContent = data.mood;
 
-            document.getElementById('voice-icon').onclick = function() {
-                alert("Voice command activated! Say a command...");
-            };
+                            musicContainer.innerHTML = `
+                                <div style="margin-bottom: 15px;">
+                                    <p><strong>Genre:</strong> ${data.genre}</p>
+                                    <h3>${data.name} by ${data.artist}</h3>
+                                </div>
+                                <div style="width: 100%;">
+                                    <iframe width="100%" height="166" scrolling="no" frameborder="no" allow="autoplay"
+                                    src="${data.embed_url}"></iframe>
+                                    <div style="font-size: 10px; color: #cccccc; line-break: anywhere; word-break: normal; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-family: Interstate, Lucida Grande, Lucida Sans Unicode, Lucida Sans, Garuda, Verdana, Tahoma, sans-serif; font-weight: 100;">
+                                    </div>
+                                </div>
+                            `;
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching music data:', error);
+                    if (musicContainer) {
+                        musicContainer.innerHTML = '<div>Error loading music recommendations</div>';
+                    }
+                });
+        }
+
+    function isModalOpen(modalId) {
+        const modal = document.getElementById(modalId);
+        return modal && modal.style.display === 'block';
+    }
+
+    function closeAllModals() {
+        const modals = document.getElementsByClassName('modal');
+        for (let modal of modals) {
+            modal.style.display = 'none';
+        }
+        if (musicPlayer && !musicPlayer.paused) {
+            musicPlayer.pause();
+            musicPlayer.currentTime = 0;
+        }
+    }
+
+    function setupModals() {
+    const modals = document.getElementsByClassName('modal');
+    const closeButtons = document.getElementsByClassName('close');
+
+    document.getElementById('face-icon').onclick = function() {
+        closeAllModals();
+        detectFaceAndEmotion();
+    };
+
+    document.getElementById('outfit-icon').onclick = function() {
+        if (!isModalOpen('outfitModal')) {
+            closeAllModals();
+            document.getElementById('outfitModal').style.display = 'block';
+            fetchOutfitData();
+        }
+    };
+
+    document.getElementById('weather-icon').onclick = function() {
+        if (!isModalOpen('weatherModal')) {
+            closeAllModals();
+            document.getElementById('weatherModal').style.display = 'block';
+        }
+    };
+    document.getElementById('weather-widget').onclick = function() {
+        if (!isModalOpen('weatherModal')) {
+            closeAllModals();
+            document.getElementById('weatherModal').style.display = 'block';
+        }
+    };
+
+    document.getElementById('calendar-icon').onclick = function() {
+        if (!isModalOpen('calendarModal')) {
+            closeAllModals();
+            document.getElementById('calendarModal').style.display = 'block';
+            updateCalendarModal();
+        }
+    };
+    document.getElementById('schedule-widget').onclick = function() {
+        if (!isModalOpen('calendarModal')) {
+            closeAllModals();
+            document.getElementById('calendarModal').style.display = 'block';
+            updateCalendarModal();
+        }
+    };
+
+    document.getElementById('music-icon').onclick = function() {
+        if (!isModalOpen('musicModal')) {
+            closeAllModals();
+            document.getElementById('musicModal').style.display = 'block';
+            updateMoodDisplay();
+            fetchMusicRecommendation();
+
+            if (musicPollingInterval) {
+                clearInterval(musicPollingInterval);
+            }
+
+            musicPollingInterval = setInterval(fetchMusicRecommendation, 30000); 
+        }
+        if (musicPlayer && musicPlayer.paused) {
+            musicPlayer.play().catch(err => console.error("Music playback error:", err));
+        }
+    };
 
             for (let i = 0; i < closeButtons.length; i++) {
                 closeButtons[i].onclick = function() {
@@ -636,6 +731,104 @@
                 });
         }
 
+        function showErrorMessage(message, duration = 5000) {
+        const errorElement = document.createElement('div');
+        errorElement.className = 'face-status';
+        errorElement.style.backgroundColor = 'rgba(255, 0, 0, 0.7)';
+        errorElement.textContent = message;
+        document.body.appendChild(errorElement);
+        setTimeout(() => {
+            errorElement.remove();
+        }, duration);
+    }
+                // Voice Recognition Integration
+        async function pollVoiceCommands() {
+            if (!isVoicePolling) return;
+            try {
+                console.log('Requesting voice command from backend...');
+                const response = await fetch('http://localhost:5004/voice');
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Voice command received:', data);
+
+                if (data.status === 'success' && data.command) {
+                    processVoiceCommand(data.command);
+                    showErrorMessage(`Voice command processed: ${data.command}`, 3000);
+                } else if (data.status === 'error') {
+                    console.error('Voice recognition error:', data.message);
+                    showErrorMessage('Voice recognition error: ' + data.message, 3000);
+                } else {
+                    console.log('No voice command detected, continuing to poll...');
+                }
+            } catch (error) {
+                console.error('Error fetching voice command:', error);
+                showErrorMessage('Failed to fetch voice command: ' + error.message, 5000);
+            }
+            if (isVoicePolling) {
+                setTimeout(pollVoiceCommands, 4000);
+            }
+        }
+
+        function processVoiceCommand(command) {
+    console.log('Processing voice command:', command);
+
+    const validCommands = [
+        'weather', 'forecast',
+        'calendar', 'schedule',
+        'outfit', 'clothes',
+        'music', 'play',
+        'stop', 'turn off',
+        'face', 'emotion'
+    ];
+
+    const isValidCommand = validCommands.some(keyword => command.includes(keyword));
+
+    if (!isValidCommand) {
+        showErrorMessage(`Unknown command: ${command}`, 3000);
+        return;
+    }
+
+    if (command.includes('weather') || command.includes('forecast')) {
+        if (!isModalOpen('weatherModal')) {
+            closeAllModals();
+            document.getElementById('weatherModal').style.display = 'block';
+            fetchWeatherAndOutfitData();
+        }
+    } else if (command.includes('calendar') || command.includes('schedule')) {
+        if (!isModalOpen('calendarModal')) {
+            closeAllModals();
+            document.getElementById('calendarModal').style.display = 'block';
+            updateCalendarModal();
+        }
+    } else if (command.includes('outfit') || command.includes('clothes')) {
+        if (!isModalOpen('outfitModal')) {
+            closeAllModals();
+            document.getElementById('outfitModal').style.display = 'block';
+            fetchOutfitData();
+        }
+    } else if (command.includes('music') || command.includes('play')) {
+        if (!isModalOpen('musicModal')) {
+            closeAllModals();
+            document.getElementById('musicModal').style.display = 'block';
+            const currentEmotion = document.getElementById('emotion-tag').textContent.replace('Emotion: ', '');
+            document.getElementById('music-mood').textContent = currentEmotion;
+        }
+        if (musicPlayer && musicPlayer.paused) {
+            musicPlayer.play().catch(err => console.error("Music playback error:", err));
+        }
+    } else if (command.includes('stop') || command.includes('turn off')) {
+        isVoicePolling = false;
+        closeAllModals();
+        console.log('Voice recognition stopped');
+        showErrorMessage('Voice recognition stopped. Refresh to restart.', 3000);
+    } else if (command.includes('face') || command.includes('emotion')) {
+        closeAllModals();
+        detectFaceAndEmotion();
+    }
+}
+
         document.addEventListener('DOMContentLoaded', function() {
             startCamera();
             updateDateTime();
@@ -665,6 +858,8 @@
             
             // Set up periodic face and emotion recognition (every 30 seconds)
             setupPeriodicRecognition(30);
+            pollVoiceCommands();
+            showErrorMessage("Voice command activated! Say a command...", 3000);
         });
     </script>
 
